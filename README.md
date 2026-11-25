@@ -6,9 +6,11 @@ The product is in Hebrew and fully right-to-left. Access is by invitation only, 
 
 ## See it in action
 
-[![Launch video](docs/launch-video-cover.jpg)](docs/launch-video.mp4)
 
-A 34-second walkthrough of the real app: [watch the launch video](docs/launch-video.mp4). It was built in code with HyperFrames, from screen recordings with private data masked. Music: Sascha Ende, ende.app (CC BY 4.0).
+https://github.com/user-attachments/assets/43718a1f-5fdb-4c87-98f9-b06ad4c749e2
+
+
+A 34-second walkthrough of the real app: Watch it above. It was built in code with HyperFrames, from screen recordings with private data masked. Music: Sascha Ende, ende.app (CC BY 4.0).
 
 ## What it does
 
