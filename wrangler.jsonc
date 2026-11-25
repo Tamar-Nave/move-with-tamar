@@ -1,0 +1,24 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "move-with-tamar",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-11-10",
+  "observability": {
+    "enabled": true
+  },
+  "triggers": {
+    "crons": ["* * * * *"]
+  },
+  "vars": {
+    "SUPABASE_URL": "https://matxecbuzcjfeyogebyz.supabase.co",
+    "SUPABASE_KEY": "sb_publishable_zAdaoilGOHVRDvXxf2WBcg_aNjEbFzt",
+    "SITE_URL": "https://move-with-tamar.tamarnave-tn.workers.dev",
+    "VAPID_PUBLIC_KEY": "BEEFwwLivr1JwEVocAgyPYRg4GsqPGSwNAlsVy2gPbCTHP5mfJ3oKvQbdSEtbW091eplVJOvABEoS8Q5uAGet5A"
+  },
+  "assets": {
+    "directory": "dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/calendar/*"]
+  }
+}

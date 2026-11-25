@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>מתכון</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#A0573A}a:hover{color:#7E4229}
+.ing{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #EEEBE6;font-size:15px;min-height:28px}
+.alt{font-family:inherit;font-size:13px;border:1px solid #E6C7B5;color:#A0573A;background:#fff;border-radius:999px;padding:0 10px;min-height:32px}
+.nut{display:flex;flex-direction:column;align-items:center;gap:2px;background:#fff;border:1px solid #E4E1DB;border-radius:12px;padding:8px 0;font-size:12px;color:#66625C}
+</style>
+</helmet>
+<div dir="rtl" style="width: 390px; height: 844px; box-sizing: border-box; background: #F0EEE4; font-family: 'Heebo', sans-serif; color: #2B2622; display: flex; flex-direction: column; overflow: hidden">
+  <div style="height: 220px; background: repeating-linear-gradient(45deg,#ECE9E3,#ECE9E3 10px,#F4F2EE 10px,#F4F2EE 20px); position: relative; display: flex; align-items: center; justify-content: center; color: #66625C; font-size: 14px; flex-shrink: 0">
+    [תמונת מתכון]
+    <a href="Recipes.dc.html" aria-label="חזרה למתכונים" style="position: absolute; top: 48px; right: 16px; width: 44px; height: 44px; border-radius: 22px; background: #fff; display: flex; align-items: center; justify-content: center; text-decoration: none; color: #2B2622; font-size: 22px">›</a>
+    <button aria-label="הסירי מהמועדפים" style="position: absolute; top: 48px; left: 16px; width: 44px; height: 44px; border-radius: 22px; background: #fff; border: 0; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="#A0573A" stroke="#A0573A" stroke-width="1.8" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"></path></svg></button>
+  </div>
+  <div style="padding: 16px 20px; display: flex; flex-direction: column; gap: 14px">
+    <div>
+      <h1 style="margin: 0; font-size: 26px">פנקייק חלבון</h1>
+      <div style="font-size: 14px; color: #66625C">אחרי אימון · 15 דק׳ · 2 מנות</div>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
+      <div class="nut"><strong style="font-size: 16px; color: #2B2622">320</strong>קלוריות</div>
+      <div class="nut"><strong style="font-size: 16px; color: #2B2622">28 ג׳</strong>חלבון</div>
+      <div class="nut"><strong style="font-size: 16px; color: #2B2622">30 ג׳</strong>פחמימות</div>
+      <div class="nut"><strong style="font-size: 16px; color: #2B2622">9 ג׳</strong>שומן</div>
+    </div>
+    <div style="display: flex; border-bottom: 2px solid #E4E1DB">
+      <button style="font-family: inherit; flex-grow: 1; min-height: 44px; border: 0; background: transparent; font-size: 15px; font-weight: 700; color: #A0573A; border-bottom: 2px solid #A0573A; margin-bottom: -2px">מצרכים</button>
+      <button style="font-family: inherit; flex-grow: 1; min-height: 44px; border: 0; background: transparent; font-size: 15px; color: #66625C">אופן הכנה</button>
+    </div>
+    <div>
+      <div class="ing"><span>1 כוס שיבולת שועל</span><button class="alt">⇄ חלופה</button></div>
+      <div style="background: #F6E6DC; border-radius: 12px; padding: 10px 12px; margin: 6px 0; font-size: 14px; display: flex; flex-direction: column; gap: 4px">
+        <strong style="font-size: 13px; color: #A0573A">חלופות לשיבולת שועל:</strong>
+        <span>• קמח כוסמין, ¾ כוס</span>
+        <span>• שיבולת שועל ללא גלוטן (לרגישות לגלוטן)</span>
+      </div>
+      <div class="ing"><span>2 ביצים</span><button class="alt">⇄ חלופה</button></div>
+      <div class="ing"><span>1 סקופ אבקת חלבון</span><button class="alt">⇄ חלופה</button></div>
+      <div class="ing"><span>½ בננה בשלה</span><span></span></div>
+      <div class="ing"><span>קורט קינמון</span><span></span></div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

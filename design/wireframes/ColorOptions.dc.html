@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>אפשרויות צבע</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+.opt{background:#F0EEE4;border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:14px}
+.card{background:#fff;border:1px solid #E4E1DB;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.btn{font-family:inherit;border:0;border-radius:12px;min-height:44px;color:#fff;font-size:15px;font-weight:700}
+</style>
+</helmet>
+<div dir="rtl" style="width: 1240px; height: 600px; box-sizing: border-box; background: #fff; font-family: 'Heebo', sans-serif; color: #2B2622; padding: 32px; display: flex; flex-direction: column; gap: 20px">
+  <div>
+    <h1 style="margin: 0; font-size: 28px">איזה צבע ראשי?</h1>
+    <div style="font-size: 15px; color: #66625C">כל הגוונים עומדים בתקן הנגישות לטקסט לבן על כפתור ולטקסט צבעוני על רקע לבן</div>
+  </div>
+  <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px">
+    <div class="opt">
+      <strong style="font-size: 17px">1 · מוקה</strong>
+      <div style="font-size: 13px; color: #66625C">הטאופ מהלוגו, בגוון עמוק. רגוע ויוקרתי</div>
+      <div class="card"><span style="font-size: 13px; color: #66625C">המנוי שלי</span><span style="font-size: 40px; font-weight: 700; color: #75655A; line-height: 1">5</span><div style="height: 8px; border-radius: 4px; background: #E9E6E0"><div style="width: 62%; height: 8px; border-radius: 4px; background: #75655A"></div></div></div>
+      <button class="btn" style="background: #75655A">לפרטי האימון</button>
+      <code dir="ltr" style="font-size: 12px; color: #66625C">#75655A</code>
+    </div>
+    <div class="opt">
+      <strong style="font-size: 17px">2 · טרקוטה</strong>
+      <div style="font-size: 13px; color: #66625C">חום־כתום חם, פחות אדום. קרוב לאפרסק שבלוגו</div>
+      <div class="card"><span style="font-size: 13px; color: #66625C">המנוי שלי</span><span style="font-size: 40px; font-weight: 700; color: #A0573A; line-height: 1">5</span><div style="height: 8px; border-radius: 4px; background: #E9E6E0"><div style="width: 62%; height: 8px; border-radius: 4px; background: #A0573A"></div></div></div>
+      <button class="btn" style="background: #A0573A">לפרטי האימון</button>
+      <code dir="ltr" style="font-size: 12px; color: #66625C">#A0573A</code>
+    </div>
+    <div class="opt">
+      <strong style="font-size: 17px">3 · ורוד עתיק</strong>
+      <div style="font-size: 13px; color: #66625C">ורוד־סגול מעושן. נשי ועדין</div>
+      <div class="card"><span style="font-size: 13px; color: #66625C">המנוי שלי</span><span style="font-size: 40px; font-weight: 700; color: #965665; line-height: 1">5</span><div style="height: 8px; border-radius: 4px; background: #E9E6E0"><div style="width: 62%; height: 8px; border-radius: 4px; background: #965665"></div></div></div>
+      <button class="btn" style="background: #965665">לפרטי האימון</button>
+      <code dir="ltr" style="font-size: 12px; color: #66625C">#965665</code>
+    </div>
+    <div class="opt">
+      <strong style="font-size: 17px">4 · מרווה</strong>
+      <div style="font-size: 13px; color: #66625C">ירוק־אפור טבעי. רענן ומשלים את הקרם</div>
+      <div class="card"><span style="font-size: 13px; color: #66625C">המנוי שלי</span><span style="font-size: 40px; font-weight: 700; color: #5C6B52; line-height: 1">5</span><div style="height: 8px; border-radius: 4px; background: #E9E6E0"><div style="width: 62%; height: 8px; border-radius: 4px; background: #5C6B52"></div></div></div>
+      <button class="btn" style="background: #5C6B52">לפרטי האימון</button>
+      <code dir="ltr" style="font-size: 12px; color: #66625C">#5C6B52</code>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1240,"height":600}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
