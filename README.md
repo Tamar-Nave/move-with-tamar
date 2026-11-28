@@ -7,10 +7,10 @@ The product is in Hebrew and fully right-to-left. Access is by invitation only, 
 ## See it in action
 
 
-https://github.com/user-attachments/assets/43718a1f-5fdb-4c87-98f9-b06ad4c749e2
+https://github.com/user-attachments/assets/2e374c15-1546-4c83-a793-93d931dc79aa
 
 
-A 34-second walkthrough of the real app: Watch it above. It was built in code with HyperFrames, from screen recordings with private data masked. Music: Sascha Ende, ende.app (CC BY 4.0).
+A 34-second walkthrough of the app. It was built in code with HyperFrames from the app's own screens, running with fictional demo data. Music: Sascha Ende, ende.app (CC BY 4.0).
 
 ## What it does
 
