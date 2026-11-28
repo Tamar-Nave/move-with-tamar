@@ -4,6 +4,7 @@ import { Platform, Text, View } from 'react-native';
 import { Monogram } from '@/components/monogram';
 import { Btn, C, Muted } from '@/components/ui';
 import { BRAND } from '@/lib/brand';
+import { GLASS } from '@/lib/theme';
 
 type BeforeInstallPromptEvent = Event & { prompt: () => void; userChoice: Promise<{ outcome: string }> };
 const isIOS = () => Platform.OS === 'web' && /iphone|ipad|ipod/i.test(navigator.userAgent);
@@ -30,10 +31,10 @@ export function InstallIntroScreen({ onContinue }: { onContinue: () => void }) {
   }
 
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: BRAND.colors.background, padding: 24 }}>
+    <View style={[{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }, GLASS.screen]}>
       <View style={{ width: '100%', maxWidth: 400, gap: 16, alignItems: 'center' }}>
         <Monogram height={56} color={C.primary} />
-        <Text style={{ fontSize: 22, fontWeight: '700', color: C.text, textAlign: 'center' }}>לפני שנכנסים</Text>
+        <Text style={{ fontSize: 22, fontWeight: '600', color: C.text, textAlign: 'center' }}>לפני שנכנסים</Text>
         <Text style={{ fontSize: 15, color: C.textMuted, textAlign: 'center', lineHeight: 22 }}>
           כדאי להוסיף את {BRAND.name} למסך הבית — כך שיהיה קל לפתוח אותה, ושיגיעו התראות על אימונים והודעות.
         </Text>

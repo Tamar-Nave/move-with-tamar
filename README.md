@@ -18,9 +18,11 @@ A 34-second walkthrough of the app. It was built in code with HyperFrames from t
 - Sign in with an emailed one-time code or a password
 - Weekly schedule, class page with participant avatars, one-tap registration and cancellation
 - Automatic waitlist: when a spot opens, the first person in line gets a time-limited offer
-- Add a class to Google Calendar or Apple Calendar
-- Subscription status and remaining entries, "my bookings" (upcoming and past)
-- Recipe library with search, favourites, nutrition values and ingredient substitutes
+- Add a class to Google Calendar, Apple Calendar or another calendar app (`.ics`), choosing once
+- Subscription status, entries used this month, "my bookings" (upcoming and past)
+- Monthly progress: attended classes, a weekly streak and an achievement badge
+- Health declaration: save the blank Ministry of Health form and see when it was approved
+- Recipe library with search, categories, favourites, nutrition values and ingredient substitutes
 - Push notifications: class reminders, studio announcements, waitlist offers, cancellations
 - Install prompt for Android and iOS home screens
 
@@ -28,7 +30,10 @@ A 34-second walkthrough of the app. It was built in code with HyperFrames from t
 - Create classes from a free-text sentence (a Hebrew parser fills the form, including several days at once)
 - Manage members, subscriptions (unlimited or 8 entries per calendar month), freezes and payment tracking
 - Attendance, manual booking and cancellation, announcements from templates
-- Recipe editor with photo upload
+- Custom class types with their own name, colour and reminder note
+- Health declaration tracking: only the approval and its date are stored, never the filled form
+- Recipe editor with photo upload, structured ingredients, nutrition from a built-in food database and suggested substitutes
+- A calendar feed of all studio classes, for Google Calendar
 - Two-factor authentication (TOTP) for the admin account
 
 ## Tech stack
@@ -68,13 +73,12 @@ Real members' data is involved, so this was treated as a requirement and not an 
 
 ```
 src/app/          screens (Expo Router): home, schedule, recipes, admin, profile, login, MFA
-src/components/   shared UI, MFA settings, notification settings, install prompt
-src/lib/          Supabase client, auth, dates (Israel time), classes, members, calendar, push, parsing
-worker/           Cloudflare Worker (static assets, calendar files, notification cron)
-supabase/migrations/   database schema and policies, numbered 001 to 016
-public/           PWA manifest, service worker, icons, security headers
+src/components/   shared UI and design system, MFA settings, notification settings, install prompt
+src/lib/          Supabase client, auth, dates (Israel time), classes, members, progress, recipes, calendar, push, theme
+worker/           Cloudflare Worker (static assets, calendar files and feeds, notification cron)
+supabase/migrations/   database schema and policies, numbered 001 to 023
+public/           PWA manifest, service worker, icons, security headers, blank health form
 design/           wireframes
-docs/             launch video
 ```
 
 ## Run it locally
@@ -104,7 +108,7 @@ npm run deploy                 # build the web app and deploy the Worker (needs 
 
 ## Status
 
-In active use by the studio. Next steps are a final visual design pass and an accessibility review.
+In active use by the studio, with a recently refreshed visual design. Next steps include an accessibility review.
 
 ## License
 

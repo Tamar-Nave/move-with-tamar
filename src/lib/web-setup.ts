@@ -7,7 +7,7 @@ export function setupWebDocument() {
   html.lang = 'he';
   html.dir = 'rtl';
   document.title = 'Move with Tamar';
-  document.body.style.backgroundColor = '#F0EEE4';
+  document.body.style.backgroundColor = '#F8F4EA';
   document.body.style.fontFamily = "'Heebo', system-ui, sans-serif";
   if (!document.getElementById('heebo-font')) {
     const link = document.createElement('link');
@@ -27,6 +27,17 @@ export function setupWebDocument() {
     document.head.appendChild(style);
   }
 
+  // A light that passes over the "מצטיינת" badge every few seconds (off when the device asks for less motion).
+  if (!document.getElementById('badge-shine')) {
+    const style = document.createElement('style');
+    style.id = 'badge-shine';
+    style.textContent = `[data-shine]::after { content: ""; position: absolute; top: -20%; bottom: -20%; left: 32%; width: 36%; pointer-events: none;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.65), transparent); transform: translateX(-280%) rotate(16deg); animation: badge-shine 3.8s ease-in-out 1s infinite; }
+      @keyframes badge-shine { 0%, 58% { transform: translateX(-280%) rotate(16deg); } 100% { transform: translateX(280%) rotate(16deg); } }
+      @media (prefers-reduced-motion: reduce) { [data-shine]::after { display: none; } }`;
+    document.head.appendChild(style);
+  }
+
   // Lets the app be added to the home screen (required for notifications on iPhone).
   const add = (id: string, tag: 'link' | 'meta', attrs: Record<string, string>) => {
     if (document.getElementById(id)) return;
@@ -39,5 +50,5 @@ export function setupWebDocument() {
   add('pwa-icon', 'link', { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' });
   add('pwa-capable', 'meta', { name: 'apple-mobile-web-app-capable', content: 'yes' });
   add('pwa-title', 'meta', { name: 'apple-mobile-web-app-title', content: 'Move with Tamar' });
-  add('pwa-theme', 'meta', { name: 'theme-color', content: '#F0EEE4' });
+  add('pwa-theme', 'meta', { name: 'theme-color', content: '#F8F4EA' });
 }

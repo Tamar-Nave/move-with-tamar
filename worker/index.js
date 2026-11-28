@@ -6,10 +6,14 @@ import { buildPushPayload } from '@block65/webcrypto-web-push';
 const KIND_LABEL = { sculpt: 'SCULPT', functional: 'אימון פונקציונלי' };
 const BRAND = 'Move with Tamar';
 
+// A class's display name: the class type's name (new), else the old kind (links and rows from before class types).
+const cleanName = (v) => String(v ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, 60); // no control characters (CR/LF...) from a link
+const classLabel = (r) => cleanName(r.type_name) || (Object.hasOwn(KIND_LABEL, r.kind) ? KIND_LABEL[r.kind] : 'אימון');
+
 const pad = (n) => String(n).padStart(2, '0');
 const stamp = (d) =>
   `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`;
-const esc = (s) => String(s ?? '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+const esc = (s) => String(s ?? '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r\n|\r|\n/g, '\\n');
 
 // RFC 5545: lines are folded at 75 octets (Hebrew letters are 2 bytes each).
 function fold(line) {
@@ -25,10 +29,10 @@ function fold(line) {
   return out.join('\r\n');
 }
 
-function buildCalendar(rows, { alarms = true } = {}) {
+function buildCalendar(rows, { alarms = true, name = BRAND } = {}) {
   const lines = [
     'BEGIN:VCALENDAR', 'VERSION:2.0', `PRODID:-//${BRAND}//Classes//HE`, 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
-    `X-WR-CALNAME:${esc(BRAND)}`, 'REFRESH-INTERVAL;VALUE=DURATION:PT1H', 'X-PUBLISHED-TTL:PT1H',
+    `X-WR-CALNAME:${esc(name)}`, 'REFRESH-INTERVAL;VALUE=DURATION:PT1H', 'X-PUBLISHED-TTL:PT1H',
   ];
   const now = stamp(new Date());
   for (const r of rows) {
@@ -41,11 +45,11 @@ function buildCalendar(rows, { alarms = true } = {}) {
       `DTSTAMP:${now}`,
       `DTSTART:${stamp(start)}`,
       `DTEND:${stamp(end)}`,
-      `SUMMARY:${esc(`${KIND_LABEL[r.kind] ?? r.kind} · ${BRAND}`)}`,
+      `SUMMARY:${esc(`${classLabel(r)} · ${BRAND}`)}`,
       `DESCRIPTION:${esc(r.notes && r.notes !== '[demo]' ? r.notes : 'נתראה באימון!')}`,
       `STATUS:${cancelled ? 'CANCELLED' : 'CONFIRMED'}`,
     );
-    if (!cancelled && alarms) lines.push('BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${esc(`תזכורת: ${KIND_LABEL[r.kind] ?? 'אימון'} בעוד שעתיים`)}`, 'TRIGGER:-PT120M', 'END:VALARM');
+    if (!cancelled && alarms) lines.push('BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${esc(`תזכורת: ${classLabel(r)} בעוד שעתיים`)}`, 'TRIGGER:-PT120M', 'END:VALARM');
     lines.push('END:VEVENT');
   }
   lines.push('END:VCALENDAR');
@@ -84,14 +88,30 @@ async function handleRequest(request, env) {
     if (url.pathname === '/calendar/event.ics') {
       const id = url.searchParams.get('id') ?? '';
       const kind = url.searchParams.get('k') ?? '';
+      const typeName = cleanName(url.searchParams.get('t')); // class type name (new links); `k` is the old kind (old links)
       const start = new Date(url.searchParams.get('s') ?? '');
       const duration = Number(url.searchParams.get('d'));
-      if (!/^[0-9a-f-]{36}$/i.test(id) || !KIND_LABEL[kind] || Number.isNaN(start.getTime()) || !(duration >= 10 && duration <= 300)) {
+      if (!/^[0-9a-f-]{36}$/i.test(id) || !(Object.hasOwn(KIND_LABEL, kind) || typeName) || Number.isNaN(start.getTime()) || !(duration >= 10 && duration <= 300)) {
         return new Response('Invalid class link.', { status: 400 });
       }
-      const ics = buildCalendar([{ class_id: id, kind, starts_at: start.toISOString(), duration_min: duration, class_status: 'scheduled', notes: null }], { alarms: false });
+      const ics = buildCalendar([{ class_id: id, kind, type_name: typeName, starts_at: start.toISOString(), duration_min: duration, class_status: 'scheduled', notes: null }], { alarms: false });
       return new Response(ics, {
         headers: { 'Content-Type': 'text/calendar; charset=utf-8', 'Content-Disposition': 'inline; filename="move-with-tamar-class.ics"' },
+      });
+    }
+
+    // The studio's whole schedule for the admin (only works with an admin's secret token; any other token gets an empty calendar).
+    const am = url.pathname.match(/^\/calendar\/admin\/([0-9a-f-]{36})\.ics$/i);
+    if (am) {
+      const ares = await rpc(env, 'admin_calendar_feed', { p_token: am[1] });
+      if (!ares.ok) return new Response('Calendar is not available right now.', { status: 502 });
+      const arows = await ares.json();
+      return new Response(buildCalendar(Array.isArray(arows) ? arows : [], { alarms: false, name: BRAND + ' · כל האימונים' }), {
+        headers: {
+          'Content-Type': 'text/calendar; charset=utf-8',
+          'Cache-Control': 'private, max-age=300',
+          'Content-Disposition': 'inline; filename="move-with-tamar-studio.ics"',
+        },
       });
     }
 

@@ -1,14 +1,14 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Text, TextInput, View } from 'react-native';
 
 import { NativePickerInput } from '@/components/form-inputs';
 import { BackLink, Btn, Card, Chip, C, Disclosure, ErrorText, IconBtn, Label, Muted, Screen, Title } from '@/components/ui';
-import type { ClassRow } from '@/lib/classes';
+import { parseClassQuick, type ClassTypeRow } from '@/lib/class-types';
 import { CLASS_DEFAULTS, defaultCancelHours, defaultReminderMinutes, isMorningClass } from '@/lib/defaults';
 import { addDays, dateTimeLabel, dayLong, dayMonthLabel, israelToDate, startOfWeek, todayYmd } from '@/lib/dates';
-import { parseClassText } from '@/lib/parse-class';
 import { supabase } from '@/lib/supabase';
+import { GLASS } from '@/lib/theme';
 
 type OpenMode = 'weekly' | 'now' | 'before' | 'custom';
 
@@ -29,7 +29,8 @@ function openModeShort(mode: OpenMode, beforeDays: number): string {
 
 export default function NewClassScreen() {
   const router = useRouter();
-  const [kind, setKind] = useState<ClassRow['kind']>('sculpt');
+  const [types, setTypes] = useState<ClassTypeRow[] | null>(null); // the studio's active class types
+  const [typeId, setTypeId] = useState<string | null>(null);
   const [date, setDate] = useState(addDays(todayYmd(), 1));
   const [time, setTime] = useState('19:00');
   const [duration, setDuration] = useState(50);
@@ -49,10 +50,19 @@ export default function NewClassScreen() {
   const [quickText, setQuickText] = useState('');
   const [quickResult, setQuickResult] = useState<{ filled: string[]; warnings: string[] } | null>(null);
 
+  useEffect(() => {
+    supabase.from('class_types').select('*').eq('is_active', true).order('created_at').then(({ data }) => {
+      const list = (data as ClassTypeRow[] | null) ?? [];
+      setTypes(list);
+      setTypeId((cur) => cur ?? list[0]?.id ?? null);
+    });
+  }, []);
+  const type = types?.find((t) => t.id === typeId);
+
   function applyQuick() {
-    const p = parseClassText(quickText, todayYmd());
+    const p = parseClassQuick(quickText, todayYmd(), types ?? []);
     const filled: string[] = [];
-    if (p.kind) { setKind(p.kind); filled.push(p.kind === 'sculpt' ? 'SCULPT' : 'פונקציונלי'); }
+    if (p.typeId) { setTypeId(p.typeId); filled.push(p.typeName!); }
     if (p.dates) {
       setDate(p.dates[0]);
       setExtraDates(p.dates.slice(1));
@@ -85,13 +95,14 @@ export default function NewClassScreen() {
   }
 
   async function create() {
+    if (!typeId) { setMessage({ ok: false, text: 'בחרי סוג אימון.' }); return; }
     setBusy(true);
     setMessage(null);
     const rows = [date, ...extraDates].flatMap((baseDate) => Array.from({ length: repeatWeeks + 1 }, (_, i) => {
       const ymd = addDays(baseDate, 7 * i);
       const start = israelToDate(ymd, time);
       return {
-        kind, starts_at: start.toISOString(), duration_min: duration, capacity,
+        type_id: typeId, starts_at: start.toISOString(), duration_min: duration, capacity,
         registration_opens_at: opensAt(openMode, ymd, start, customDate, customTime, beforeDays, i).toISOString(),
         cancel_hours_before: cancelHours, reminder_minutes_before: reminderMinutes,
         waitlist_confirm_minutes: waitMinutes, notes: notes.trim() || null,
@@ -112,14 +123,14 @@ export default function NewClassScreen() {
 
       <Card style={{ gap: 8 }}>
         <Label>מילוי מהיר</Label>
-        <Muted>כתבי או הקליטי (במיקרופון של המקלדת) משפט אחד, והטופס יתמלא. למשל: "SCULPT שלישי ב־19:00, 10 משתתפות, כל שבוע".</Muted>
-        <TextInput value={quickText} onChangeText={setQuickText} accessibilityLabel="מילוי מהיר של האימון" multiline
-          placeholder="פונקציונלי ראשון ורביעי בשבע בערב, 12 מקומות"
-          style={{ minHeight: 70, borderRadius: 12, borderWidth: 1, borderColor: C.border, backgroundColor: '#fff', padding: 12, fontSize: 15.5, textAlign: 'right' }} />
+        <Muted>כתבי או הקליטי (במיקרופון של המקלדת) משפט אחד, והטופס יתמלא. הסוג מזוהה מול סוגי האימונים שהגדרת. למשל: "{types?.[0]?.name ?? 'SCULPT'} שלישי ב־19:00, 10 משתתפות, כל שבוע".</Muted>
+        <TextInput value={quickText} onChangeText={setQuickText} accessibilityLabel="מילוי מהיר של האימון" multiline placeholderTextColor="#8C7C72"
+          placeholder={`${types?.[0]?.name ?? 'פונקציונלי'} ראשון ורביעי בשבע בערב, 12 מקומות`}
+          style={{ ...GLASS.input, minHeight: 80, padding: 14, fontSize: 15.5, color: C.text, textAlign: 'right' }} />
         <Btn label="מילוי הטופס" variant="secondary" disabled={!quickText.trim()} onPress={applyQuick} />
         {quickResult && (
           <View accessibilityLiveRegion="polite" style={{ gap: 4 }}>
-            {quickResult.filled.length > 0 && <Text style={{ fontSize: 14, color: '#1F5F2E', textAlign: 'right' }}>מילאתי: {quickResult.filled.join(' · ')}</Text>}
+            {quickResult.filled.length > 0 && <Text style={{ fontSize: 14, color: C.success, textAlign: 'right' }}>מילאתי: {quickResult.filled.join(' · ')}</Text>}
             {quickResult.warnings.map((w) => <Text key={w} style={{ fontSize: 14, color: C.primaryDark, textAlign: 'right' }}>{w}</Text>)}
             <Muted>בדקי את הטופס למטה לפני השמירה.</Muted>
           </View>
@@ -129,10 +140,20 @@ export default function NewClassScreen() {
       <Card style={{ gap: 16 }}>
         <View style={{ gap: 8 }}>
           <Label>סוג אימון</Label>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <Chip label="SCULPT" selected={kind === 'sculpt'} onPress={() => setKind('sculpt')} />
-            <Chip label="פונקציונלי" selected={kind === 'functional'} onPress={() => setKind('functional')} />
-          </View>
+          {!types && <Muted>טוענת את סוגי האימונים…</Muted>}
+          <Wrap>{(types ?? []).map((t) => <Chip key={t.id} label={t.name} selected={typeId === t.id} onPress={() => setTypeId(t.id)} />)}</Wrap>
+          {types && types.length === 0 && (
+            <View style={{ gap: 6 }}>
+              <Muted>עוד אין סוגי אימונים פעילים. צריך להגדיר לפחות אחד.</Muted>
+              <Btn label="להגדרת סוגי אימונים" variant="secondary" onPress={() => router.push('/admin/class-types' as never)} />
+            </View>
+          )}
+          {type && (
+            <View style={{ borderRightWidth: 6, borderRightColor: type.color, paddingRight: 10, gap: 2 }}>
+              {type.description ? <Muted>{type.description}</Muted> : null}
+              {type.reminder_note ? <Muted>התזכורת תכלול: "{type.name} מתחיל ב־{time} ({type.reminder_note})"</Muted> : null}
+            </View>
+          )}
         </View>
 
         <View style={{ flexDirection: 'row', gap: 10 }}>
@@ -198,7 +219,7 @@ export default function NewClassScreen() {
 
         <View style={{ gap: 4 }}>
           <Label>זמן לאישור מקום מרשימת המתנה (דקות)</Label>
-          <Stepper value={waitMinutes} onChange={setWaitMinutes} min={5} max={120} step={5} label="דקות" />
+          <Stepper value={waitMinutes} onChange={setWaitMinutes} min={5} max={120} step={1} label="דקות" />
         </View>
 
         <View style={{ gap: 4 }}>
@@ -209,13 +230,13 @@ export default function NewClassScreen() {
 
         <View style={{ gap: 6 }}>
           <Label>הערות (אופציונלי)</Label>
-          <TextInput value={notes} onChangeText={setNotes} accessibilityLabel="הערות" multiline
-            style={{ minHeight: 70, borderRadius: 12, borderWidth: 1, borderColor: C.border, backgroundColor: '#fff', padding: 12, fontSize: 15.5, textAlign: 'right' }} />
+          <TextInput value={notes} onChangeText={setNotes} accessibilityLabel="הערות" multiline placeholderTextColor="#8C7C72"
+            style={{ ...GLASS.input, minHeight: 80, padding: 14, fontSize: 15.5, color: C.text, textAlign: 'right' }} />
         </View>
       </Disclosure>
 
-      {message && (message.ok ? <Text style={{ color: '#1F5F2E', textAlign: 'right' }}>{message.text}</Text> : <ErrorText>{message.text}</ErrorText>)}
-      <Btn label={totalClasses > 1 ? `הוספת ${totalClasses} אימונים` : 'הוספת האימון'} busy={busy} disabled={!validDate || !validCustom} onPress={create} />
+      {message && (message.ok ? <Text style={{ color: C.success, textAlign: 'right' }}>{message.text}</Text> : <ErrorText>{message.text}</ErrorText>)}
+      <Btn label={totalClasses > 1 ? `הוספת ${totalClasses} אימונים` : 'הוספת האימון'} busy={busy} disabled={!validDate || !validCustom || !typeId} onPress={create} />
     </Screen>
   );
 }
@@ -228,7 +249,7 @@ function Stepper({ value, onChange, min, max, step = 1, label }: { value: number
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
       <IconBtn icon="remove" label={`הפחתת ${label}`} onPress={() => onChange(Math.max(min, value - step))} />
-      <Text accessibilityLabel={`${value} ${label}`} style={{ fontSize: 17, fontWeight: '700', minWidth: 30, textAlign: 'center', color: C.text }}>{value}</Text>
+      <Text accessibilityLabel={`${value} ${label}`} style={{ fontSize: 17, fontWeight: '600', minWidth: 30, textAlign: 'center', color: C.text }}>{value}</Text>
       <IconBtn icon="add" label={`הוספת ${label}`} onPress={() => onChange(Math.min(max, value + step))} />
     </View>
   );

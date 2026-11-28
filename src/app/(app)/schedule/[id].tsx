@@ -1,15 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Image, Linking, Pressable, Text, View } from 'react-native';
+import { Image, Pressable, Text, View } from 'react-native';
 
-import { Badge, Btn, Card, C, ErrorText, Loading, Muted, Screen, Title } from '@/components/ui';
+import { AddToCalendar } from '@/components/add-to-calendar';
+import { BackLink, Badge, Btn, Card, C, ErrorText, Loading, Muted, Screen, Title } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import {
-  KIND_LABEL, fetchRoster, friendlyDbError, rosterDisplayName, spotsTaken, waitlistCount,
+  CLASS_SELECT, classColor, classDescription, classLabel, fetchRoster, friendlyDbError, rosterDisplayName, spotsTaken, waitlistCount,
   type ClassRow, type MyBooking, type RosterEntry,
 } from '@/lib/classes';
-import { googleCalendarUrl, isIosDevice, openAppleCalendar } from '@/lib/calendar';
 import { dateTimeLabel, timeLabel } from '@/lib/dates';
 import { supabase } from '@/lib/supabase';
 
@@ -29,7 +29,7 @@ export default function ClassDetailScreen() {
 
   const load = useCallback(async () => {
     const [c, r, b, e] = await Promise.all([
-      supabase.from('classes').select('*').eq('id', id).single(),
+      supabase.from('classes').select(CLASS_SELECT).eq('id', id).single(),
       fetchRoster(id),
       session
         ? supabase.from('bookings').select('id, class_id, status, offer_expires_at').eq('class_id', id).eq('user_id', session.user.id).neq('status', 'cancelled').maybeSingle()
@@ -71,15 +71,11 @@ export default function ClassDetailScreen() {
 
   return (
     <Screen>
-      <Pressable accessibilityRole="button" onPress={() => (router.canGoBack() ? router.back() : router.replace('/schedule' as never))} style={{ minHeight: 44, justifyContent: 'center' }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-          <Ionicons name="chevron-forward" size={18} color={C.primaryDark} />
-          <Text style={{ color: C.primaryDark, fontSize: 15 }}>חזרה ללו״ז</Text>
-        </View>
-      </Pressable>
+      <BackLink label="חזרה ללו״ז" onPress={() => (router.canGoBack() ? router.back() : router.replace('/schedule' as never))} />
 
-      <View>
-        <Title>{KIND_LABEL[cls.kind]}</Title>
+      <View style={{ borderRightWidth: classColor(cls) ? 6 : 0, borderRightColor: classColor(cls) ?? undefined, paddingRight: classColor(cls) ? 12 : 0, gap: 2 }}>
+        <Title>{classLabel(cls)}</Title>
+        {classDescription(cls) ? <Text style={{ fontSize: 14, color: C.textMuted, textAlign: 'right', marginTop: 2 }}>{classDescription(cls)}</Text> : null}
         <Text style={{ fontSize: 16, color: C.text, textAlign: 'right', marginTop: 2 }}>{dateTimeLabel(cls.starts_at).split(' · ')[0]}</Text>
         <Text style={{ fontSize: 16, color: C.text, textAlign: 'right', writingDirection: 'ltr' }}>
           {timeLabel(cls.starts_at)} – {timeLabel(new Date(new Date(cls.starts_at).getTime() + cls.duration_min * 60000))}
@@ -88,7 +84,7 @@ export default function ClassDetailScreen() {
 
       <Card>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text style={{ fontSize: 16, fontWeight: '700', color: C.text }}>{taken} מתוך {cls.capacity} נרשמו</Text>
+          <Text style={{ fontSize: 16, fontWeight: '600', color: C.text }}>{taken} מתוך {cls.capacity} נרשמו</Text>
           {full ? <Badge label={waiting ? `מלא · ${waiting} ממתינות` : 'מלא'} tone="orange" /> : <Badge label={`${cls.capacity - taken} מקומות פנויים`} tone="green" />}
         </View>
         {people.length > 0 && (
@@ -102,7 +98,7 @@ export default function ClassDetailScreen() {
             ))}
             {people.length > 5 && (
               <View style={{ marginStart: -12, width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: C.card, backgroundColor: C.primarySoft, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ fontSize: 14, fontWeight: '700', color: C.primaryDark }}>+{people.length - 5}</Text>
+                <Text style={{ fontSize: 14, fontWeight: '600', color: C.primaryDark }}>+{people.length - 5}</Text>
               </View>
             )}
             <View style={{ flex: 1 }} />
@@ -119,7 +115,7 @@ export default function ClassDetailScreen() {
             ))}
             {queue.length > 0 && (
               <>
-                <Text style={{ fontSize: 14, fontWeight: '700', color: C.text, textAlign: 'right', marginTop: 6 }}>רשימת המתנה</Text>
+                <Text style={{ fontSize: 14, fontWeight: '600', color: C.text, textAlign: 'right', marginTop: 6 }}>רשימת המתנה</Text>
                 {queue.map((q, i) => (
                   <View key={q.booking_id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                     <Avatar p={q} size={36} />
@@ -141,29 +137,17 @@ export default function ClassDetailScreen() {
 
       {mine?.status === 'booked' && (
         <>
-          <Badge label="✓ את רשומה לאימון הזה" tone="brand" />
+          <View style={{ alignItems: 'flex-start' }}><Badge label="✓ את רשומה לאימון הזה" tone="brand" /></View>
           <Btn label="ביטול הרשמה" variant="danger" busy={busy} disabled={!canCancel || started}
             onPress={() => act(() => supabase.rpc('cancel_booking', { p_booking: mine.id }))} />
           {!canCancel && !started && <Muted>זמן הביטול עבר. לביטול כדאי לפנות לתמר.</Muted>}
-          {!started && (
-            <Card>
-              <Text style={{ fontSize: 15, fontWeight: '700', color: C.text, textAlign: 'right' }}>להוסיף את האימון ליומן?</Text>
-              {(isIosDevice()
-                ? [['הוספה ליומן אפל (אייפון)', 'apple'], ['הוספה ליומן Google', 'google']]
-                : [['הוספה ליומן Google (אנדרואיד)', 'google'], ['הוספה ליומן אפל (אייפון)', 'apple']]
-              ).map(([label, which]) => (
-                <Btn key={label} label={label} variant="secondary"
-                  onPress={() => (which === 'apple' ? openAppleCalendar(cls) : Linking.openURL(googleCalendarUrl(cls)))} />
-              ))}
-              <Muted>האימון נכנס ליומן כאירוע רגיל. אם תבטלי הרשמה או שהאימון ישתנה, צריך למחוק או לעדכן אותו ביומן בעצמך.</Muted>
-            </Card>
-          )}
+          {!started && <AddToCalendar cls={cls} />}
         </>
       )}
 
       {mine?.status === 'offered' && mine.offer_expires_at && (
         <Card style={{ borderColor: C.primary, borderWidth: 2 }}>
-          <Text style={{ fontSize: 16, fontWeight: '700', color: C.text, textAlign: 'right' }}>התפנה לך מקום!</Text>
+          <Text style={{ fontSize: 16, fontWeight: '600', color: C.text, textAlign: 'right' }}>התפנה לך מקום!</Text>
           <Muted>צריך לאשר עד {timeLabel(mine.offer_expires_at)}, אחרת המקום עובר לבאה בתור.</Muted>
           <Btn label="מאשרת את המקום" busy={busy} onPress={() => act(() => supabase.rpc('confirm_offer', { p_booking: mine.id }))} />
           <Btn label="לא מתאים לי" variant="secondary" busy={busy} onPress={() => act(() => supabase.rpc('cancel_booking', { p_booking: mine.id }))} />
@@ -172,7 +156,7 @@ export default function ClassDetailScreen() {
 
       {mine?.status === 'waitlist' && (
         <>
-          <Badge label={`ברשימת המתנה · מקום ${myQueuePos || ''}`} tone="orange" />
+          <View style={{ alignItems: 'flex-start' }}><Badge label={`ברשימת המתנה · מקום ${myQueuePos || ''}`} tone="orange" /></View>
           <Muted>כשיתפנה מקום נשלח לך הודעה, ויהיו לך {cls.waitlist_confirm_minutes} דקות לאשר.</Muted>
           <Btn label="הסרה מרשימת ההמתנה" variant="secondary" busy={busy} onPress={() => act(() => supabase.rpc('cancel_booking', { p_booking: mine.id }))} />
         </>
@@ -187,7 +171,7 @@ export default function ClassDetailScreen() {
       {profile?.is_admin && (
         <Card style={{ marginTop: 12 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text style={{ fontSize: 16, fontWeight: '700', color: C.text }}>ניהול האימון</Text>
+            <Text style={{ fontSize: 16, fontWeight: '600', color: C.text }}>ניהול האימון</Text>
             <Badge label="רק את רואה" tone="gray" />
           </View>
           <Btn label="משתתפות ונוכחות" onPress={() => router.push(`/admin/class/${cls.id}` as never)} />
@@ -210,8 +194,8 @@ function Avatar({ p, size = 44 }: { p: RosterEntry; size?: number }) {
   return p.avatar_url ? (
     <Image source={{ uri: p.avatar_url }} style={{ width: size, height: size, borderRadius: size / 2 }} accessibilityLabel={p.first_name} />
   ) : (
-    <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: '#E9E6E0', alignItems: 'center', justifyContent: 'center' }}>
-      <Text style={{ fontSize: size * 0.38, fontWeight: '700', color: '#5A564F' }}>{p.first_name.slice(0, 1)}</Text>
+    <View style={{ width: size, height: size, borderRadius: size / 2, backgroundColor: C.primarySoft, alignItems: 'center', justifyContent: 'center' }}>
+      <Text style={{ fontSize: size * 0.38, fontWeight: '600', color: C.primary }}>{p.first_name.slice(0, 1)}</Text>
     </View>
   );
 }

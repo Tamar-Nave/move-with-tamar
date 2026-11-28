@@ -3,6 +3,7 @@ import { Animated, Easing, View } from 'react-native';
 
 import { Monogram } from '@/components/monogram';
 import { BRAND } from '@/lib/brand';
+import { GLASS } from '@/lib/theme';
 
 /** Shown while the app checks the session, between opening it and the home screen appearing. */
 export function SplashLogo() {
@@ -22,9 +23,9 @@ export function SplashLogo() {
   }, [opacity, scale]);
 
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: BRAND.colors.background }}>
+    <View style={[{ flex: 1, alignItems: 'center', justifyContent: 'center' }, GLASS.screen]}>
       <Animated.View style={{ opacity, transform: [{ scale }] }}>
-        <Monogram height={72} color={BRAND.colors.primary} />
+        <Monogram height={136} color={BRAND.colors.primary} />
       </Animated.View>
     </View>
   );

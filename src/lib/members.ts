@@ -1,4 +1,5 @@
-import { addDays, todayYmd } from '@/lib/dates';
+import { addDays, israelToDate, todayYmd } from '@/lib/dates';
+import { isHealthValid } from '@/lib/health';
 import { supabase } from '@/lib/supabase';
 
 export type MemberProfile = { id: string; email: string; first_name: string; last_name: string | null; phone: string | null; is_admin: boolean };
@@ -12,7 +13,9 @@ export type MemberOverview = {
   profile: MemberProfile;
   membership: Membership | null;
   entriesLeft: number | null; // null = unlimited or no plan
+  bonusThisMonth: number; // entries added by hand for the current month
   paidThisMonth: boolean | null; // null = not relevant (no active membership this calendar month)
+  healthApproved: boolean | null; // null = not relevant (the admin) or couldn't check
 };
 
 export const PLAN_LABEL = { unlimited: 'ללא הגבלה', monthly_8: '8 כניסות בחודש' } as const;
@@ -31,26 +34,34 @@ export async function fetchMembersOverview(): Promise<{ members: MemberOverview[
   const { first, next } = monthBounds();
   const today = todayYmd();
   const ym = currentYearMonth();
-  const [p, m, b, inv, pay] = await Promise.all([
+  const [p, m, b, inv, pay, health, bonus] = await Promise.all([
     supabase.from('profiles').select('id, email, first_name, last_name, phone, is_admin').order('first_name'),
     supabase.from('memberships').select('*').in('status', ['active', 'frozen']).order('created_at', { ascending: false }),
-    supabase.from('bookings').select('user_id, classes!inner(starts_at)').eq('charged', true)
-      .gte('classes.starts_at', `${first}T00:00:00Z`).lt('classes.starts_at', `${next}T00:00:00Z`),
+    // a cancelled class gives the entry back, so it doesn't count (same rule as entries_left, migration 021)
+    supabase.from('bookings').select('user_id, classes!inner(starts_at, status)').eq('charged', true).neq('classes.status', 'cancelled')
+      .gte('classes.starts_at', israelToDate(first, '00:00').toISOString()).lt('classes.starts_at', israelToDate(next, '00:00').toISOString()),
     supabase.from('invites').select('email, first_name, last_name'),
     supabase.from('membership_payments').select('user_id').eq('year_month', ym),
+    supabase.from('health_declarations').select('user_id, approved_on'),
+    supabase.from('membership_bonus').select('membership_id, entries').eq('month', first),
   ]);
   const profiles = (p.data as MemberProfile[]) ?? [];
   const memberships = (m.data as Membership[]) ?? [];
   const paid = new Set(((pay.data as { user_id: string }[]) ?? []).map((x) => x.user_id));
+  const approvals = new Map(((health.data as { user_id: string; approved_on: string }[]) ?? []).map((x) => [x.user_id, x.approved_on]));
+  const bonuses = new Map(((bonus.data as { membership_id: string; entries: number }[]) ?? []).map((x) => [x.membership_id, x.entries]));
   const used: Record<string, number> = {};
   for (const row of (b.data as { user_id: string }[]) ?? []) used[row.user_id] = (used[row.user_id] ?? 0) + 1;
 
   const members = profiles.map((profile) => {
     const membership = memberships.find((x) => x.user_id === profile.id && x.starts_on <= today && x.ends_on >= today) ?? null;
+    // before migration 023 has run, the old column still holds the bonus
+    const bonusThisMonth = !membership ? 0 : bonus.error ? membership.bonus_entries : bonuses.get(membership.id) ?? 0;
     const entriesLeft =
-      membership?.plan === 'monthly_8' ? membership.entries_per_month + membership.bonus_entries - (used[profile.id] ?? 0) : null;
+      membership?.plan === 'monthly_8' ? membership.entries_per_month + bonusThisMonth - (used[profile.id] ?? 0) : null;
     const paidThisMonth = membership && membership.status === 'active' ? paid.has(profile.id) : null;
-    return { profile, membership, entriesLeft, paidThisMonth };
+    const healthApproved = health.error || profile.is_admin ? null : isHealthValid(approvals.get(profile.id));
+    return { profile, membership, entriesLeft, bonusThisMonth, paidThisMonth, healthApproved };
   });
   const joined = new Set(profiles.map((x) => x.email.toLowerCase()));
   const pending = ((inv.data as Invite[]) ?? []).filter((i) => !joined.has(i.email.toLowerCase()));

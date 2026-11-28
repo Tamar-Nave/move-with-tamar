@@ -50,6 +50,8 @@ example
 !.env.example
 
 # private working notes and raw material (kept locally, never published)
+# (the app serves its own copy of the blank form from public/health-declaration.pdf)
+/הצהרת בריאות.pdf
 PROJECT_NOTES.md
 CLAUDE.md
 launch-video/
@@ -59,3 +61,6 @@ ref_frames/
 ScreenRecording_*
 WhatsApp Video*
 נהלי הצפנה אבטחה ופרטיות/
+
+# local AI demo (throw-away, never committed)
+ai-demo/

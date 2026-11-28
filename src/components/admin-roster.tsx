@@ -84,7 +84,7 @@ export function AdminRoster({ cls, onChange }: { cls: ClassRow; onChange?: () =>
         <Btn label="+ הוספת מתאמנת לאימון" variant="secondary" onPress={() => setAdding(true)} />
       ) : (
         <Card style={{ borderColor: C.primary, borderWidth: 2 }}>
-          <Text style={{ fontSize: 16, fontWeight: '700', color: C.text, textAlign: 'right' }}>הוספת מתאמנת</Text>
+          <Text style={{ fontSize: 16, fontWeight: '600', color: C.text, textAlign: 'right' }}>הוספת מתאמנת</Text>
           {available.length === 0 && <Muted>כל המתאמנות כבר רשומות.</Muted>}
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
             {available.map((m) => <Chip key={m.profile.id} label={fullName(m.profile)} selected={pick === m.profile.id} onPress={() => setPick(m.profile.id)} />)}
@@ -98,7 +98,7 @@ export function AdminRoster({ cls, onChange }: { cls: ClassRow; onChange?: () =>
               </View>
               {!asWaitlist && (
                 <>
-                  {noEntries && <Text style={{ color: '#8A3A0C', textAlign: 'right' }}>לא נשארו לה כניסות החודש. אפשר לרשום אותה בכל זאת:</Text>}
+                  {noEntries && <Text style={{ color: C.warning, textAlign: 'right' }}>לא נשארו לה כניסות החודש. אפשר לרשום אותה בכל זאת:</Text>}
                   <Label>איך לרשום?</Label>
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                     <Chip label="וחיוב כניסה" selected={mode === 'charge'} onPress={() => setMode('charge')} />
@@ -116,23 +116,23 @@ export function AdminRoster({ cls, onChange }: { cls: ClassRow; onChange?: () =>
         </Card>
       )}
 
-      <Text style={{ fontSize: 18, fontWeight: '700', color: C.text, textAlign: 'right' }}>רשומות</Text>
+      <Text style={{ fontSize: 18, fontWeight: '600', color: C.text, textAlign: 'right' }}>רשומות</Text>
       {going.length === 0 && <Muted>עוד אין רשומות לאימון הזה.</Muted>}
       {going.map((r) => (
         <Card key={r.id} style={{ gap: 10 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Text style={{ fontSize: 16, fontWeight: '700', color: C.text }}>{name(r)}</Text>
+            <Text style={{ fontSize: 16, fontWeight: '600', color: C.text }}>{name(r)}</Text>
             {r.status === 'offered' && <Badge label="הוצע לה מקום" tone="orange" />}
           </View>
           <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
             <Chip label={r.attended === true ? '✓ הגיעה' : 'הגיעה'} selected={r.attended === true} onPress={() => setAttended(r, true)} />
             <Chip label={r.attended === false ? '✗ לא הגיעה' : 'לא הגיעה'} selected={r.attended === false} onPress={() => setAttended(r, false)} />
             <Pressable accessibilityRole="button" onPress={() => setCancelRow(r)} style={{ minHeight: 40, paddingHorizontal: 14, justifyContent: 'center' }}>
-              <Text style={{ color: '#9A2B12', fontSize: 15 }}>הורדה מהאימון</Text>
+              <Text style={{ color: C.danger, fontSize: 15 }}>הורדה מהאימון</Text>
             </Pressable>
           </View>
           {cancelRow?.id === r.id && (
-            <View style={{ backgroundColor: C.primarySoft, borderRadius: 12, padding: 12, gap: 8 }}>
+            <View style={{ backgroundColor: C.primarySoft, borderRadius: 18, padding: 14, gap: 8 }}>
               <Text style={{ fontSize: 14, color: C.text, textAlign: 'right' }}>להוריד את {r.profiles?.first_name} מהאימון? המקום יוצע לראשונה ברשימת ההמתנה.</Text>
               <Btn label="להוריד ולהחזיר כניסה" busy={busy} onPress={() => doCancel(true)} />
               <Btn label="להוריד בלי להחזיר כניסה" variant="secondary" busy={busy} onPress={() => doCancel(false)} />
@@ -142,7 +142,7 @@ export function AdminRoster({ cls, onChange }: { cls: ClassRow; onChange?: () =>
         </Card>
       ))}
 
-      <Text style={{ fontSize: 18, fontWeight: '700', color: C.text, textAlign: 'right' }}>רשימת המתנה</Text>
+      <Text style={{ fontSize: 18, fontWeight: '600', color: C.text, textAlign: 'right' }}>רשימת המתנה</Text>
       {waiting.length === 0 && <Muted>אין אף אחת ברשימת ההמתנה.</Muted>}
       {waiting.map((r, i) => (
         <Card key={r.id} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -157,7 +157,7 @@ export function AdminRoster({ cls, onChange }: { cls: ClassRow; onChange?: () =>
               <Text style={{ color: C.primaryDark, fontSize: 15 }}>העברה לאימון</Text>
             </Pressable>
             <Pressable accessibilityRole="button" onPress={() => run(() => supabase.rpc('admin_cancel_booking', { p_booking: r.id, p_refund: true }))} style={{ minHeight: 44, paddingHorizontal: 10, justifyContent: 'center' }}>
-              <Text style={{ color: '#9A2B12', fontSize: 15 }}>הסרה</Text>
+              <Text style={{ color: C.danger, fontSize: 15 }}>הסרה</Text>
             </Pressable>
           </View>
         </Card>

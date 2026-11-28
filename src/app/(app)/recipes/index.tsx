@@ -1,13 +1,14 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Image, Pressable, Text, TextInput, View } from 'react-native';
 
+import { Icon } from '@/components/icon';
 import { RecipeDisclaimer } from '@/components/recipe-disclaimer';
 import { Chip, C, Loading, Muted, Screen, Title } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
-import { RECIPE_CATEGORIES, type Recipe } from '@/lib/recipes';
+import { RECIPE_CATEGORIES, recipeCategories, type Recipe } from '@/lib/recipes';
 import { supabase } from '@/lib/supabase';
+import { GLASS } from '@/lib/theme';
 
 export default function RecipesScreen() {
   const router = useRouter();
@@ -45,19 +46,19 @@ export default function RecipesScreen() {
   const q = query.trim();
   const shown = (recipes ?? []).filter((r) => {
     if (filter === 'favorites' && !favs.has(r.id)) return false;
-    if (filter !== 'all' && filter !== 'favorites' && r.category !== filter) return false;
+    if (filter !== 'all' && filter !== 'favorites' && !recipeCategories(r).includes(filter)) return false;
     if (!q) return true;
     return r.title.includes(q) || (r.recipe_ingredients ?? []).some((i) => i.text.includes(q));
   });
-  const usedCategories = RECIPE_CATEGORIES.filter((c) => (recipes ?? []).some((r) => r.category === c));
+  const usedCategories = RECIPE_CATEGORIES.filter((c) => (recipes ?? []).some((r) => recipeCategories(r).includes(c)));
 
   return (
     <Screen>
       <Title>מתכונים</Title>
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: C.card, borderWidth: 1, borderColor: '#D9D5CE', borderRadius: 12, paddingHorizontal: 12, minHeight: 46 }}>
-        <Ionicons name="search" size={20} color={C.textMuted} />
-        <TextInput value={query} onChangeText={setQuery} placeholder="חיפוש מתכון או מצרך" placeholderTextColor="#8A857E"
+      <View style={{ ...GLASS.input, flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 999, paddingHorizontal: 16, minHeight: 48 }}>
+        <Icon name="search" size={20} color={C.textMuted} />
+        <TextInput value={query} onChangeText={setQuery} placeholder="חיפוש מתכון או מצרך" placeholderTextColor="#8C7C72"
           accessibilityLabel="חיפוש מתכון או מצרך" style={{ flex: 1, fontSize: 16, color: C.text, textAlign: 'right', minHeight: 44 }} />
       </View>
 
@@ -75,20 +76,20 @@ export default function RecipesScreen() {
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
         {shown.map((r) => (
           <Pressable key={r.id} accessibilityRole="button" accessibilityLabel={r.title} onPress={() => router.push(`/recipes/${r.id}` as never)}
-            style={{ width: '48%', flexGrow: 1, backgroundColor: C.card, borderRadius: 16, borderWidth: 1, borderColor: C.border, overflow: 'hidden' }}>
-            <View style={{ height: 120, backgroundColor: '#ECE9E3', alignItems: 'center', justifyContent: 'center' }}>
+            style={{ ...GLASS.card, width: '47%', flexGrow: 1, borderRadius: 24, padding: 6 }}>
+            <View style={{ height: 120, borderRadius: 19, overflow: 'hidden', backgroundColor: '#EFE5D6', alignItems: 'center', justifyContent: 'center' }}>
               {r.image_url
                 ? <Image source={{ uri: r.image_url }} style={{ width: '100%', height: '100%' }} resizeMode="cover" accessibilityIgnoresInvertColors />
-                : <Ionicons name="restaurant-outline" size={32} color="#B5ACA0" />}
+                : <Icon name="food" size={34} color="#B7A797" />}
               <Pressable accessibilityRole="button" accessibilityLabel={favs.has(r.id) ? 'הסרה מהמועדפים' : 'הוספה למועדפים'}
                 onPress={(e) => { e.stopPropagation?.(); toggleFav(r.id); }}
-                style={{ position: 'absolute', top: 8, left: 8, width: 36, height: 36, borderRadius: 18, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name={favs.has(r.id) ? 'heart' : 'heart-outline'} size={20} color={favs.has(r.id) ? C.primary : C.textMuted} />
+                style={{ ...GLASS.soft, backgroundColor: 'rgba(255,255,255,0.88)', borderWidth: 1, position: 'absolute', top: 8, left: 8, width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }}>
+                <Icon name={favs.has(r.id) ? 'heartFilled' : 'heart'} size={20} color={favs.has(r.id) ? C.primary : C.textMuted} />
               </Pressable>
             </View>
-            <View style={{ padding: 10, gap: 2 }}>
-              <Text numberOfLines={2} style={{ fontSize: 15, fontWeight: '700', color: C.text, textAlign: 'right' }}>{r.title}</Text>
-              <Text style={{ fontSize: 12, color: C.textMuted, textAlign: 'right' }}>{r.category}{r.minutes ? ` · ${r.minutes} דק׳` : ''}</Text>
+            <View style={{ paddingHorizontal: 6, paddingTop: 8, paddingBottom: 6, gap: 2 }}>
+              <Text numberOfLines={2} style={{ fontSize: 15, fontWeight: '600', color: C.text, textAlign: 'right' }}>{r.title}</Text>
+              <Text style={{ fontSize: 12, color: C.textMuted, textAlign: 'right' }}>{recipeCategories(r).join(', ')}{r.minutes ? ` · ${r.minutes} דק׳` : ''}</Text>
               {r.calories ? <Text style={{ fontSize: 12, color: C.textMuted, textAlign: 'right' }}>{r.calories} קל׳{r.protein_g ? ` · ${r.protein_g} ג׳ חלבון` : ''}</Text> : null}
             </View>
           </Pressable>

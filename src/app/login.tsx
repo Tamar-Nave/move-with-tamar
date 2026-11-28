@@ -1,21 +1,13 @@
 import { useState } from 'react';
-import {
-  ActivityIndicator,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { Field } from '@/components/field';
+import { Monogram } from '@/components/monogram';
+import { Btn, C, Card, ErrorText, Muted, Title } from '@/components/ui';
 import { BRAND } from '@/lib/brand';
 import { supabase } from '@/lib/supabase';
+import { GLASS } from '@/lib/theme';
 
-const C = BRAND.colors;
 type Mode = 'code' | 'password';
 
 function friendlyError(message: string): string {
@@ -68,88 +60,67 @@ export default function LoginScreen() {
     busy || !emailValid || (mode === 'password' && password.length < 6) || (codeSent && mode === 'code' && code.trim().length < 6);
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={[{ flex: 1 }, GLASS.screen]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.column}>
-          <Image source={require('../../assets/brand/logo-cream.png')} style={styles.logo} resizeMode="contain" accessibilityLabel={BRAND.name} />
+          <View style={styles.brand} accessible accessibilityLabel={BRAND.name}>
+            <Monogram height={104} color={C.primary} />
+            <Text style={styles.brandName}>{BRAND.name.toUpperCase()}</Text>
+          </View>
 
-          <Text style={styles.title}>כניסה</Text>
-          <Text style={styles.subtitle}>
-            {mode === 'code' && codeSent
-              ? `שלחנו קוד למייל ${cleanEmail}`
-              : 'הכניסה לאפליקציה היא בהזמנה.'}
-          </Text>
+          <Card>
+            <Title>כניסה</Title>
+            <Muted>
+              {mode === 'code' && codeSent
+                ? `שלחנו קוד למייל ${cleanEmail}`
+                : 'הכניסה לאפליקציה היא בהזמנה.'}
+            </Muted>
 
-          <Text style={styles.label} nativeID="emailLabel">אימייל</Text>
-          <TextInput
-            accessibilityLabelledBy="emailLabel"
-            value={email}
-            onChangeText={setEmail}
-            placeholder="name@example.com"
-            placeholderTextColor="#8A857E"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoComplete="email"
-            autoCorrect={false}
-            editable={!(mode === 'code' && codeSent)}
-            style={[styles.input, { textAlign: 'left', writingDirection: 'ltr' }]}
-          />
+            <Field
+              label="אימייל" ltr
+              value={email}
+              onChangeText={setEmail}
+              placeholder="name@example.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+              autoCorrect={false}
+              editable={!(mode === 'code' && codeSent)}
+            />
 
-          {mode === 'password' && (
-            <>
-              <Text style={styles.label} nativeID="pwLabel">סיסמה</Text>
-              <TextInput
-                accessibilityLabelledBy="pwLabel"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-                autoComplete="current-password"
-                style={[styles.input, { textAlign: 'left', writingDirection: 'ltr' }]}
-              />
-            </>
-          )}
+            {mode === 'password' && (
+              <Field label="סיסמה" ltr value={password} onChangeText={setPassword} secureTextEntry autoComplete="current-password" />
+            )}
 
-          {mode === 'code' && codeSent && (
-            <>
-              <Text style={styles.label} nativeID="codeLabel">קוד מהמייל</Text>
-              <TextInput
-                accessibilityLabelledBy="codeLabel"
+            {mode === 'code' && codeSent && (
+              <Field
+                label="קוד מהמייל" ltr
                 value={code}
                 onChangeText={setCode}
                 keyboardType="number-pad"
                 autoComplete="one-time-code"
                 maxLength={8}
-                style={[styles.input, styles.codeInput]}
+                style={styles.codeInput}
               />
-            </>
-          )}
+            )}
 
-          {error && (
-            <Text accessibilityRole="alert" style={styles.error}>
-              {error}
-            </Text>
-          )}
+            {error && <ErrorText>{error}</ErrorText>}
 
-          <Pressable
-            accessibilityRole="button"
-            onPress={primaryAction}
-            disabled={primaryDisabled}
-            style={({ pressed }) => [styles.button, primaryDisabled && styles.buttonDisabled, pressed && { opacity: 0.85 }]}>
-            {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{primaryLabel}</Text>}
-          </Pressable>
+            <Btn label={primaryLabel} busy={busy} disabled={primaryDisabled} onPress={primaryAction} />
 
-          {mode === 'code' && codeSent && (
-            <Pressable accessibilityRole="button" onPress={() => { setCodeSent(false); setCode(''); setError(null); }} style={styles.linkButton}>
-              <Text style={styles.link}>שליחת קוד חדש או החלפת מייל</Text>
+            {mode === 'code' && codeSent && (
+              <Pressable accessibilityRole="button" onPress={() => { setCodeSent(false); setCode(''); setError(null); }} style={styles.linkButton}>
+                <Text style={styles.link}>שליחת קוד חדש או החלפת מייל</Text>
+              </Pressable>
+            )}
+
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => { setMode(mode === 'code' ? 'password' : 'code'); setError(null); setCodeSent(false); }}
+              style={styles.linkButton}>
+              <Text style={styles.link}>{mode === 'code' ? 'כניסה עם סיסמה' : 'כניסה עם קוד במייל'}</Text>
             </Pressable>
-          )}
-
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => { setMode(mode === 'code' ? 'password' : 'code'); setError(null); setCodeSent(false); }}
-            style={styles.linkButton}>
-            <Text style={styles.link}>{mode === 'code' ? 'כניסה עם סיסמה' : 'כניסה עם קוד במייל'}</Text>
-          </Pressable>
+          </Card>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -158,22 +129,10 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   scroll: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  column: { width: '100%', maxWidth: 400 },
-  logo: { width: '100%', height: 220, marginBottom: 8 },
-  title: { fontSize: 28, fontWeight: '700', color: C.text, textAlign: 'right' },
-  subtitle: { fontSize: 15, color: C.textMuted, marginTop: 4, marginBottom: 20, textAlign: 'right', lineHeight: 22 },
-  label: { fontSize: 14, color: C.text, marginBottom: 6, marginTop: 12, textAlign: 'right' },
-  input: {
-    minHeight: 48, borderRadius: 12, borderWidth: 1, borderColor: '#CFCBC3', backgroundColor: C.card,
-    paddingHorizontal: 14, fontSize: 16, color: C.text,
-  },
+  column: { width: '100%', maxWidth: 400, gap: 22 },
+  brand: { alignItems: 'center', gap: 16 },
+  brandName: { fontSize: 19, letterSpacing: 5, color: C.primary, writingDirection: 'ltr', textAlign: 'center' },
   codeInput: { textAlign: 'center', fontSize: 24, letterSpacing: 8 },
-  error: { color: '#9A2B12', fontSize: 14, marginTop: 12, textAlign: 'right' },
-  button: {
-    minHeight: 52, borderRadius: 14, backgroundColor: C.primary, alignItems: 'center', justifyContent: 'center', marginTop: 20,
-  },
-  buttonDisabled: { backgroundColor: '#C9B2A6' },
-  buttonText: { color: '#fff', fontSize: 17, fontWeight: '700' },
-  linkButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center', marginTop: 4 },
-  link: { color: C.primaryDark, fontSize: 15, textDecorationLine: 'underline' },
+  linkButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  link: { color: C.primary, fontSize: 15 },
 });

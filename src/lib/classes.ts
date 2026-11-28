@@ -1,8 +1,12 @@
+import type { ClassTypeRow } from '@/lib/class-types';
 import { supabase } from '@/lib/supabase';
 
 export type ClassRow = {
   id: string;
-  kind: 'sculpt' | 'functional';
+  /** Legacy: only set on classes created before class types existed (migration 017). */
+  kind: 'sculpt' | 'functional' | null;
+  type_id: string | null;
+  class_types?: ClassTypeRow | null;
   starts_at: string;
   duration_min: number;
   capacity: number;
@@ -33,7 +37,16 @@ export function rosterDisplayName(entry: RosterEntry, list: RosterEntry[]): stri
   return sameFirstName && entry.last_name ? `${entry.first_name} ${entry.last_name}` : entry.first_name;
 }
 
-export const KIND_LABEL: Record<ClassRow['kind'], string> = { sculpt: 'SCULPT', functional: 'פונקציונלי' };
+const KIND_LABEL: Record<NonNullable<ClassRow['kind']>, string> = { sculpt: 'SCULPT', functional: 'פונקציונלי' };
+
+/** Select this wherever classes are read, so the type (name, colour, description) comes along. */
+export const CLASS_SELECT = '*, class_types(*)';
+
+/** The class's name: its type's name (falls back to the old kind for classes with no type). */
+export const classLabel = (c: Pick<ClassRow, 'kind' | 'class_types'>): string =>
+  c.class_types?.name ?? (c.kind ? KIND_LABEL[c.kind] : 'אימון');
+export const classColor = (c: Pick<ClassRow, 'class_types'>): string | null => c.class_types?.color ?? null;
+export const classDescription = (c: Pick<ClassRow, 'class_types'>): string => c.class_types?.description ?? '';
 
 const ERRORS: Record<string, string> = {
   not_authenticated: 'צריך להיכנס מחדש.',
@@ -47,6 +60,7 @@ const ERRORS: Record<string, string> = {
   cancellation_closed: 'זמן הביטול עבר. לביטול כדאי לפנות לתמר.',
   booking_not_found: 'ההרשמה לא נמצאה.',
   forbidden: 'אין לך הרשאה לפעולה הזו.',
+  class_type_in_use: 'יש אימונים מהסוג הזה, אז אי אפשר למחוק אותו. אפשר להסתיר אותו.',
 };
 
 export function friendlyDbError(message: string | undefined): string {

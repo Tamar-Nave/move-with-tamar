@@ -5,7 +5,7 @@ export const CLASS_DEFAULTS = {
   cancelHours: 3,              // members can cancel until 3 hours before
   morningCancelHours: 12,      // ...but morning classes: until 12 hours before
   morningBeforeHour: 12,       // a class starting before 12:00 counts as a morning class
-  waitlistConfirmMinutes: 10,
+  waitlistConfirmMinutes: 7,
   // Registration opens every Thursday at 20:00 for the following week (weeks start on Sunday).
   openWeekday: 'thursday',
   openTime: '20:00',

@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react';
 import { Platform, Text } from 'react-native';
 
 import { Field } from '@/components/field';
+import { HealthRow } from '@/components/health';
 import { ImagePicker } from '@/components/image-picker';
+import { ProfileSummary } from '@/components/profile-summary';
 import { InstallPrompt } from '@/components/install-prompt';
 import { MfaSettings } from '@/components/mfa-settings';
 import { NotificationSettings } from '@/components/notification-settings';
-import { Btn, C, Card, ErrorText, Label, Muted, Screen, Title } from '@/components/ui';
+import { Btn, C, Card, ErrorText, Muted, Screen } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import { uploadAvatar } from '@/lib/profile';
 import { supabase } from '@/lib/supabase';
@@ -66,18 +68,16 @@ export default function ProfileScreen() {
 
   return (
     <Screen>
-      <Title>פרופיל</Title>
-      <Text style={{ fontSize: 18, color: C.text, textAlign: 'right' }}>
-        {profile?.first_name} {profile?.last_name}
-      </Text>
-      <Text style={{ fontSize: 15, color: C.textMuted, textAlign: 'right', writingDirection: 'ltr' }}>{profile?.email}</Text>
+      <ProfileSummary />
+      <Text style={{ fontSize: 14, color: C.textMuted, textAlign: 'right', writingDirection: 'ltr' }}>{profile?.email}</Text>
+
+      {profile && !profile.is_admin && <HealthRow />}
 
       <Card style={{ gap: 10 }}>
-        <Text style={{ fontSize: 16, fontWeight: '700', color: C.text, textAlign: 'right' }}>הפרטים שלי</Text>
-        <ImagePicker imageUrl={avatarUrl} busy={uploading} onPick={pickAvatar} onRemove={removeAvatar} />
-        <Label>טלפון</Label>
+        <Text style={{ fontSize: 16, fontWeight: '600', color: C.text, textAlign: 'right' }}>הפרטים שלי</Text>
+        <ImagePicker compact imageUrl={avatarUrl} busy={uploading} onPick={pickAvatar} onRemove={removeAvatar} />
         <Field label="טלפון" ltr value={phone} onChangeText={setPhone} keyboardType="phone-pad" placeholder="050-1234567" />
-        {msg && (msg.ok ? <Text style={{ color: '#1F5F2E', textAlign: 'right' }}>{msg.text}</Text> : <ErrorText>{msg.text}</ErrorText>)}
+        {msg && (msg.ok ? <Text style={{ color: C.success, textAlign: 'right' }}>{msg.text}</Text> : <ErrorText>{msg.text}</ErrorText>)}
         <Btn label="שמירה" busy={busy} disabled={!changed} onPress={save} />
       </Card>
 

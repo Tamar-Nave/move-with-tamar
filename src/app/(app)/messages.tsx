@@ -36,10 +36,10 @@ export default function MessagesScreen() {
       {items?.map((m) => (
         <Card key={m.id}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
-            <Text style={{ fontSize: 16, fontWeight: '700', color: C.text, flexShrink: 1, textAlign: 'right' }}>{m.title}</Text>
+            <Text style={{ fontSize: 16, fontWeight: '600', color: C.text, flexShrink: 1, textAlign: 'right' }}>{m.title}</Text>
             <Text style={{ fontSize: 12, color: C.textMuted }}>{dateTimeLabel(m.created_at).split(' · ')[0]}</Text>
           </View>
-          <Text style={{ fontSize: 15, color: '#3D3A36', textAlign: 'right', lineHeight: 22 }}>{m.body}</Text>
+          <Text style={{ fontSize: 15, color: C.text, textAlign: 'right', lineHeight: 22 }}>{m.body}</Text>
         </Card>
       ))}
     </Screen>

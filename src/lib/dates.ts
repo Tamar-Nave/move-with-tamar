@@ -36,6 +36,10 @@ export const startOfWeek = (ymd: string) => addDays(ymd, -weekdayOf(ymd)); // we
 export const dayShort = (ymd: string) => DAY_SHORT[weekdayOf(ymd)];
 export const dayLong = (ymd: string) => DAY_LONG[weekdayOf(ymd)];
 export const dayNumber = (ymd: string) => Number(ymd.slice(8, 10));
+/** "2027-03-31" -> "31/03" (Israeli order). */
+export const shortDate = (ymd: string) => `${ymd.slice(8, 10)}/${ymd.slice(5, 7)}`;
+/** "2027-03-31" -> "31/03/2027". */
+export const fullDate = (ymd: string) => `${shortDate(ymd)}/${ymd.slice(0, 4)}`;
 
 export function dayMonthLabel(ymd: string): string {
   return new Intl.DateTimeFormat('he-IL', { day: 'numeric', month: 'long', timeZone: 'UTC' }).format(utcNoon(ymd));

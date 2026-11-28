@@ -5,11 +5,12 @@ import { Linking, Pressable, Text, View } from 'react-native';
 import { Field } from '@/components/field';
 import { NativePickerInput } from '@/components/form-inputs';
 import { BackLink, Badge, Btn, Card, Chip, C, ErrorText, Label, Loading, Muted, Screen, Title } from '@/components/ui';
-import { todayYmd } from '@/lib/dates';
+import { fullDate, todayYmd } from '@/lib/dates';
 import {
   PLAN_LABEL, endOfThisMonth, fetchMembersOverview, fullName, paymentReminderText, setPaidThisMonth, whatsAppUrl,
   type MemberOverview,
 } from '@/lib/members';
+import { setHealthApproved } from '@/lib/health';
 import { supabase } from '@/lib/supabase';
 
 export default function MemberScreen() {
@@ -47,7 +48,7 @@ export default function MemberScreen() {
   }
 
   if (!m) return <Screen><Loading /></Screen>;
-  const { profile, membership, entriesLeft, paidThisMonth } = m;
+  const { profile, membership, entriesLeft, bonusThisMonth, paidThisMonth, healthApproved } = m;
   const waChatUrl = whatsAppUrl(phone);
   const waReminderUrl = whatsAppUrl(phone, paymentReminderText(profile.first_name));
 
@@ -62,6 +63,13 @@ export default function MemberScreen() {
   const savePhone = () => run('הטלפון נשמר.', () => supabase.from('profiles').update({ phone: phone.trim() || null }).eq('id', id));
   const togglePaid = () => run(paidThisMonth ? 'סומן שעדיין לא שילמה.' : 'סומן ששילמה החודש.',
     () => setPaidThisMonth(id, !paidThisMonth));
+  const healthBadge = healthApproved !== null && (
+    <Pressable accessibilityRole="button" accessibilityLabel={healthApproved ? 'ביטול אישור הצהרת הבריאות' : 'אישור הצהרת הבריאות'}
+      disabled={busy} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} style={{ minHeight: 44, justifyContent: 'center' }}
+      onPress={() => run(healthApproved ? 'אישור ההצהרה בוטל.' : 'הצהרת הבריאות אושרה.', () => setHealthApproved(id, !healthApproved))}>
+      <Badge label={healthApproved ? '✓ הצהרה' : 'חסרה הצהרה'} tone={healthApproved ? 'green' : 'red'} />
+    </Pressable>
+  );
 
   return (
     <Screen>
@@ -72,7 +80,7 @@ export default function MemberScreen() {
       </View>
 
       <Card>
-        <Text style={{ fontSize: 16, fontWeight: '700', color: C.text, textAlign: 'right' }}>המנוי הנוכחי</Text>
+        <Text style={{ fontSize: 16, fontWeight: '600', color: C.text, textAlign: 'right' }}>המנוי הנוכחי</Text>
         {membership ? (
           <>
             <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -85,23 +93,29 @@ export default function MemberScreen() {
                   <Badge label={paidThisMonth ? '✓ שולם' : 'לא שולם'} tone={paidThisMonth ? 'green' : 'red'} />
                 </Pressable>
               )}
+              {healthBadge}
             </View>
-            <Muted>בתוקף עד {membership.ends_on}{entriesLeft !== null ? ` · נשארו ${entriesLeft} כניסות החודש (כולל ${membership.bonus_entries} שהוספת)` : ''}</Muted>
+            <Muted>בתוקף עד {fullDate(membership.ends_on)}{entriesLeft !== null ? ` · נשארו ${entriesLeft} כניסות החודש (כולל ${bonusThisMonth} שהוספת החודש)` : ''}</Muted>
             {membership.plan === 'monthly_8' && (
               <Btn label="+ הוספת כניסה אחת" variant="secondary" busy={busy}
-                onPress={() => run('נוספה כניסה.', () => supabase.from('memberships').update({ bonus_entries: membership.bonus_entries + 1 }).eq('id', membership.id))} />
+                onPress={() => run('נוספה כניסה לחודש הזה.', () => supabase.rpc('admin_add_entry', { p_membership: membership.id }))} />
             )}
             {membership.status === 'active'
               ? <Btn label="הקפאת המנוי" variant="secondary" busy={busy} onPress={() => run('המנוי הוקפא.', () => supabase.from('memberships').update({ status: 'frozen' }).eq('id', membership.id))} />
               : <Btn label="ביטול ההקפאה" variant="secondary" busy={busy} onPress={() => run('ההקפאה בוטלה.', () => supabase.from('memberships').update({ status: 'active' }).eq('id', membership.id))} />}
             <Btn label="סיום המנוי" variant="danger" busy={busy} onPress={() => run('המנוי הסתיים.', () => supabase.from('memberships').update({ status: 'ended' }).eq('id', membership.id))} />
           </>
-        ) : <Muted>אין מנוי פעיל. בלי מנוי היא לא יכולה להירשם לאימונים.</Muted>}
-        {msg && (msg.ok ? <Text style={{ color: '#1F5F2E', textAlign: 'right' }}>{msg.text}</Text> : <ErrorText>{msg.text}</ErrorText>)}
+        ) : (
+          <>
+            <Muted>אין מנוי פעיל. בלי מנוי היא לא יכולה להירשם לאימונים.</Muted>
+            {healthBadge && <View style={{ alignItems: 'flex-start' }}>{healthBadge}</View>}
+          </>
+        )}
+        {msg && (msg.ok ? <Text style={{ color: C.success, textAlign: 'right' }}>{msg.text}</Text> : <ErrorText>{msg.text}</ErrorText>)}
       </Card>
 
       <Card>
-        <Text style={{ fontSize: 16, fontWeight: '700', color: C.text, textAlign: 'right' }}>{membership ? 'החלפה או חידוש מנוי' : 'הפעלת מנוי'}</Text>
+        <Text style={{ fontSize: 16, fontWeight: '600', color: C.text, textAlign: 'right' }}>{membership ? 'החלפה או חידוש מנוי' : 'הפעלת מנוי'}</Text>
         <Label>סוג מנוי</Label>
         <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
           <Chip label="8 כניסות בחודש" selected={plan === 'monthly_8'} onPress={() => { setPlan('monthly_8'); setEndsOn(endOfThisMonth()); }} />
@@ -114,7 +128,7 @@ export default function MemberScreen() {
       </Card>
 
       <Card>
-        <Text style={{ fontSize: 16, fontWeight: '700', color: C.text, textAlign: 'right' }}>טלפון ווואטסאפ</Text>
+        <Text style={{ fontSize: 16, fontWeight: '600', color: C.text, textAlign: 'right' }}>טלפון ווואטסאפ</Text>
         <Field label="טלפון" ltr value={phone} onChangeText={setPhone} keyboardType="phone-pad" placeholder="050-1234567" />
         <Btn label="שמירת טלפון" variant="secondary" busy={busy} disabled={phone.trim() === (profile.phone ?? '')} onPress={savePhone} />
         {waChatUrl ? (
@@ -127,7 +141,7 @@ export default function MemberScreen() {
         ) : <Muted>אין מספר טלפון שמור, אז אי אפשר לפתוח וואטסאפ. הוסיפי מספר למעלה ושמרי.</Muted>}
       </Card>
 
-      {msg && (msg.ok ? <Text style={{ color: '#1F5F2E', textAlign: 'right' }}>{msg.text}</Text> : <ErrorText>{msg.text}</ErrorText>)}
+      {msg && (msg.ok ? <Text style={{ color: C.success, textAlign: 'right' }}>{msg.text}</Text> : <ErrorText>{msg.text}</ErrorText>)}
     </Screen>
   );
 }

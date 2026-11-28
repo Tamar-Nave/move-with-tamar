@@ -3,6 +3,7 @@ import { Platform, Text, TextInput, View } from 'react-native';
 
 import { Badge, Btn, Card, C, ErrorText, Muted } from '@/components/ui';
 import { challengeAndVerify, enrollTotp, getTotpFactor, unenrollTotp } from '@/lib/mfa';
+import { GLASS } from '@/lib/theme';
 
 /** Puts Supabase's QR exactly as given straight into the page (web only — this app has no native
  * build), instead of converting it to a data URI first. Two different conversions in a row came out
@@ -81,13 +82,13 @@ export function MfaSettings() {
   return (
     <Card style={{ gap: 12 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Text style={{ fontSize: 17, fontWeight: '700', color: C.text }}>אימות דו-שלבי</Text>
+        <Text style={{ fontSize: 17, fontWeight: '600', color: C.text }}>אימות דו-שלבי</Text>
         {factorId && !enrolling && <Badge label="מופעל" tone="green" />}
       </View>
       <Muted>שכבת הגנה נוספת לחשבון הניהול: בכניסה תתבקשי גם קוד מאפליקציית אימות, בנוסף לסיסמה או לקוד במייל.</Muted>
 
       {error && <ErrorText>{error}</ErrorText>}
-      {msg && <Text style={{ color: '#1F5F2E', textAlign: 'right' }}>{msg}</Text>}
+      {msg && <Text style={{ color: C.success, textAlign: 'right' }}>{msg}</Text>}
 
       {!factorId && !enrolling && <Btn label="הפעלת אימות דו-שלבי" busy={busy} onPress={startEnroll} />}
 
@@ -96,11 +97,11 @@ export function MfaSettings() {
           <Text style={{ textAlign: 'right', color: C.text }}>
             פתחי אפליקציית אימות (Google Authenticator, NetIQ Auth, Authy, 1Password וכו׳) והוסיפי חשבון חדש — בסריקת הקוד הזה:
           </Text>
-          <View style={{ alignItems: 'center', backgroundColor: '#fff', borderRadius: 10, padding: 12 }}>
+          <View style={{ alignItems: 'center', backgroundColor: '#fff', borderRadius: 18, padding: 12 }}>
             <QrCode svg={enrolling.qrCode} />
           </View>
           <Muted>אם האפליקציה שלך לא תומכת בסריקה, או מעדיפה הזנה ידנית — זה המפתח:</Muted>
-          <View style={{ backgroundColor: C.primarySoft, borderRadius: 10, padding: 12 }}>
+          <View style={{ backgroundColor: C.primarySoft, borderRadius: 18, padding: 14 }}>
             <Text selectable style={{ writingDirection: 'ltr', textAlign: 'center', fontSize: 16, letterSpacing: 2, color: C.text }}>
               {enrolling.secret}
             </Text>
@@ -113,7 +114,7 @@ export function MfaSettings() {
             keyboardType="number-pad"
             maxLength={6}
             style={{
-              minHeight: 48, borderRadius: 12, borderWidth: 1, borderColor: C.border, backgroundColor: C.card,
+              ...GLASS.input, minHeight: 48,
               textAlign: 'center', fontSize: 22, letterSpacing: 6, color: C.text,
             }}
           />

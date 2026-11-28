@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Text, View } from 'react-native';
 
 import { Field } from '@/components/field';
-import { BackLink, Btn, Chip, ErrorText, Label, Muted, Screen, Title } from '@/components/ui';
+import { C, BackLink, Btn, Chip, ErrorText, Label, Muted, Screen, Title } from '@/components/ui';
 import { supabase } from '@/lib/supabase';
 
 const AUDIENCES = [
@@ -71,9 +71,9 @@ export default function NewMessageScreen() {
       </View>
       <Field label="כותרת" value={title} onChangeText={setTitle} />
       <Field label="תוכן ההודעה" value={body} onChangeText={setBody} multiline style={{ minHeight: 110, paddingTop: 10, textAlignVertical: 'top' }} />
-      {hasPlaceholders && <Text style={{ color: '#8A3A0C', fontSize: 14, textAlign: 'right' }}>יש בהודעה שדות להשלמה בסוגריים מרובעים. אפשר לשלוח רק אחרי שמחליפים אותם בפרטים.</Text>}
+      {hasPlaceholders && <Text style={{ color: C.warning, fontSize: 14, textAlign: 'right' }}>יש בהודעה שדות להשלמה בסוגריים מרובעים. אפשר לשלוח רק אחרי שמחליפים אותם בפרטים.</Text>}
       <Muted>המתאמנות לא יכולות להגיב להודעה.</Muted>
-      {msg && (msg.ok ? <Text style={{ color: '#1F5F2E', textAlign: 'right' }}>{msg.text}</Text> : <ErrorText>{msg.text}</ErrorText>)}
+      {msg && (msg.ok ? <Text style={{ color: C.success, textAlign: 'right' }}>{msg.text}</Text> : <ErrorText>{msg.text}</ErrorText>)}
       <Btn label="שליחה" busy={busy} disabled={!title.trim() || !body.trim() || hasPlaceholders} onPress={send} />
     </Screen>
   );

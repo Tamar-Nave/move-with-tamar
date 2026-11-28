@@ -29,15 +29,15 @@ export function NotificationSettings() {
   return (
     <Card style={{ gap: 12 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Text style={{ fontSize: 17, fontWeight: '700', color: C.text }}>התראות</Text>
+        <Text style={{ fontSize: 17, fontWeight: '600', color: C.text }}>התראות</Text>
         {state === 'on' && <Badge label="מופעלות" tone="green" />}
       </View>
       <Muted>תזכורת לפני אימון, הודעות מתמר, ועדכון כשמתפנה לך מקום ברשימת המתנה.</Muted>
 
       {state === 'ios-install' && (
-        <View style={{ backgroundColor: C.primarySoft, borderRadius: 12, padding: 12, gap: 6 }}>
-          <Text style={{ fontSize: 14, fontWeight: '700', color: C.text, textAlign: 'right' }}>באייפון צריך קודם להוסיף את האפליקציה למסך הבית</Text>
-          <Text style={{ fontSize: 14, color: '#3D3A36', textAlign: 'right', lineHeight: 21 }}>
+        <View style={{ backgroundColor: C.primarySoft, borderRadius: 18, padding: 14, gap: 6 }}>
+          <Text style={{ fontSize: 14, fontWeight: '600', color: C.text, textAlign: 'right' }}>באייפון צריך קודם להוסיף את האפליקציה למסך הבית</Text>
+          <Text style={{ fontSize: 14, color: C.text, textAlign: 'right', lineHeight: 21 }}>
             1. פותחים את האתר ב־Safari.{'\n'}
             2. לוחצים על כפתור השיתוף (ריבוע עם חץ למעלה).{'\n'}
             3. בוחרים "הוספה למסך הבית" ולוחצים "הוספה".{'\n'}

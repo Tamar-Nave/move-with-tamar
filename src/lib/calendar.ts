@@ -1,7 +1,7 @@
 import { Linking, Platform } from 'react-native';
 
 import { BRAND } from '@/lib/brand';
-import { KIND_LABEL, type ClassRow } from '@/lib/classes';
+import { classLabel, type ClassRow } from '@/lib/classes';
 
 const z = (n: number) => String(n).padStart(2, '0');
 const stamp = (d: Date) =>
@@ -18,7 +18,7 @@ export function googleCalendarUrl(c: ClassRow): string {
   const end = new Date(start.getTime() + c.duration_min * 60000);
   const q = new URLSearchParams({
     action: 'TEMPLATE',
-    text: `${KIND_LABEL[c.kind]} · ${BRAND.name}`,
+    text: `${classLabel(c)} · ${BRAND.name}`,
     dates: `${stamp(start)}/${stamp(end)}`,
     details: c.notes && c.notes !== '[demo]' ? c.notes : 'נתראה באימון!',
   });
@@ -40,8 +40,25 @@ export function openAppleCalendar(c: ClassRow) {
   else Linking.openURL(url);
 }
 
+/**
+ * For Android phones without Google Calendar (Samsung and others) and for computers: saves the same
+ * calendar file; opening it adds the class to whichever calendar app the device has.
+ */
+export function downloadCalendarFile(c: ClassRow) {
+  const url = appleCalendarUrl(c);
+  if (Platform.OS !== 'web' || typeof document === 'undefined') { Linking.openURL(url); return; }
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'move-with-tamar-class.ics';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
 /** One-tap "add this class to the iPhone calendar": a calendar file the iPhone opens in its Calendar app. */
 export function appleCalendarUrl(c: ClassRow): string {
-  const q = new URLSearchParams({ id: c.id, k: c.kind, s: c.starts_at, d: String(c.duration_min) });
+  // `k` (old kind) is kept for classes that still have one, `t` (the type's name) is what new classes use.
+  const q = new URLSearchParams({ id: c.id, t: classLabel(c).slice(0, 60), s: c.starts_at, d: String(c.duration_min) });
+  if (c.kind) q.set('k', c.kind);
   return `${siteOrigin()}/calendar/event.ics?${q.toString()}`;
 }

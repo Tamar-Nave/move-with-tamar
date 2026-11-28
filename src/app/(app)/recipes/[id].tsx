@@ -1,13 +1,16 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
 
+import { Icon } from '@/components/icon';
 import { RecipeDisclaimer } from '@/components/recipe-disclaimer';
+import { Segmented } from '@/components/segmented';
 import { BackLink, Card, C, Loading, Screen, Title } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
-import type { Recipe } from '@/lib/recipes';
+import { RECIPE_SELECT, ingredientLine, recipeCategories, shownSubstitutes, type Recipe } from '@/lib/recipes';
+import { qtyLabel } from '@/lib/recipe-engine';
 import { supabase } from '@/lib/supabase';
+import { GLASS, webOnly } from '@/lib/theme';
 
 export default function RecipeScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -22,7 +25,7 @@ export default function RecipeScreen() {
   useEffect(() => {
     if (!session) return;
     Promise.all([
-      supabase.from('recipes').select('*, recipe_ingredients(*)').eq('id', id).single(),
+      supabase.from('recipes').select(RECIPE_SELECT).eq('id', id).single(),
       supabase.from('recipe_favorites').select('recipe_id').eq('user_id', session.user.id).eq('recipe_id', id),
     ]).then(([r, f]) => {
       const data = r.data as Recipe | null;
@@ -52,26 +55,26 @@ export default function RecipeScreen() {
     <Screen>
       <BackLink label="חזרה למתכונים" onPress={back} />
       {recipe.image_url && (
-        <Image source={{ uri: recipe.image_url }} style={{ width: '100%', height: 220, borderRadius: 16 }} resizeMode="cover" accessibilityLabel={recipe.title} />
+        <Image source={{ uri: recipe.image_url }} style={{ width: '100%', height: 220, borderRadius: 28 }} resizeMode="cover" accessibilityLabel={recipe.title} />
       )}
       <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
         <View style={{ flex: 1 }}>
           <Title>{recipe.title}</Title>
           <Text style={{ fontSize: 14, color: C.textMuted, textAlign: 'right' }}>
-            {[recipe.category, recipe.minutes ? `${recipe.minutes} דק׳` : null, recipe.servings ? `${recipe.servings} מנות` : null].filter(Boolean).join(' · ')}
+            {[recipeCategories(recipe).join(', '), recipe.minutes ? `${recipe.minutes} דק׳` : null, recipe.servings ? `${recipe.servings} מנות` : null].filter(Boolean).join(' · ')}
           </Text>
         </View>
         <Pressable accessibilityRole="button" accessibilityLabel={fav ? 'הסרה מהמועדפים' : 'הוספה למועדפים'} onPress={toggleFav}
-          style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' }}>
-          <Ionicons name={fav ? 'heart' : 'heart-outline'} size={22} color={fav ? C.primary : C.textMuted} />
+          style={{ ...GLASS.soft, width: 44, height: 44, borderRadius: 22, borderWidth: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <Icon name={fav ? 'heartFilled' : 'heart'} size={22} color={fav ? C.primary : C.textMuted} />
         </Pressable>
       </View>
 
       {nutrition.length > 0 && (
         <View style={{ flexDirection: 'row', gap: 8 }}>
           {nutrition.map(([label, value, unit]) => (
-            <View key={label} style={{ flex: 1, backgroundColor: C.card, borderRadius: 12, borderWidth: 1, borderColor: C.border, paddingVertical: 8, alignItems: 'center' }}>
-              <Text style={{ fontSize: 16, fontWeight: '700', color: C.text }}>{value}{unit}</Text>
+            <View key={label} style={{ ...GLASS.card, flex: 1, borderRadius: 20, paddingVertical: 10, alignItems: 'center' }}>
+              <Text style={{ fontSize: 16, fontWeight: '600', color: C.text }}>{value}{unit}</Text>
               <Text style={{ fontSize: 12, color: C.textMuted }}>{label}</Text>
             </View>
           ))}
@@ -79,42 +82,38 @@ export default function RecipeScreen() {
       )}
       {nutrition.length > 0 && <Text style={{ fontSize: 12, color: C.textMuted, textAlign: 'right' }}>ערכים תזונתיים למנה</Text>}
 
-      <View accessibilityRole="tablist" style={{ flexDirection: 'row', backgroundColor: '#E9E6E0', borderRadius: 12, padding: 4 }}>
-        {([['ingredients', 'מצרכים'], ['steps', 'אופן הכנה']] as const).map(([key, label]) => (
-          <Pressable key={key} accessibilityRole="tab" accessibilityState={{ selected: tab === key }} onPress={() => setTab(key)}
-            style={{ flex: 1, minHeight: 40, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: tab === key ? C.card : 'transparent' }}>
-            <Text style={{ fontSize: 15, fontWeight: tab === key ? '700' : '400', color: C.text }}>{label}</Text>
-          </Pressable>
-        ))}
-      </View>
+      <Segmented options={[['ingredients', 'מצרכים'], ['steps', 'אופן הכנה']] as const} value={tab} onChange={setTab} />
 
       {tab === 'ingredients' && (
         <Card style={{ gap: 0, paddingVertical: 4 }}>
-          {(recipe.recipe_ingredients ?? []).map((ing, i) => (
-            <View key={ing.id ?? i} style={{ paddingVertical: 10, borderBottomWidth: i < (recipe.recipe_ingredients?.length ?? 0) - 1 ? 1 : 0, borderBottomColor: '#EEEBE6', gap: 6 }}>
+          {(recipe.recipe_ingredients ?? []).map((ing, i) => {
+            const subs = shownSubstitutes(ing);
+            return (
+            <View key={ing.id ?? i} style={{ paddingVertical: 10, borderBottomWidth: i < (recipe.recipe_ingredients?.length ?? 0) - 1 ? 1 : 0, borderBottomColor: 'rgba(92,74,66,0.10)', gap: 6 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                <Text style={{ fontSize: 15, color: C.text, flex: 1, textAlign: 'right' }}>{ing.text}</Text>
-                {ing.substitutes.length > 0 && (
+                <Text style={{ fontSize: 15, color: C.text, flex: 1, textAlign: 'right' }}>{ingredientLine(ing)}</Text>
+                {subs.length > 0 && (
                   <Pressable accessibilityRole="button" accessibilityState={{ expanded: openSubs.has(i) }}
                     onPress={() => { const n = new Set(openSubs); if (n.has(i)) n.delete(i); else n.add(i); setOpenSubs(n); }}
-                    style={{ minHeight: 34, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1, borderColor: '#E6C7B5', justifyContent: 'center' }}>
-                    <Text style={{ fontSize: 13, color: C.primaryDark }}>⇄ חלופה</Text>
+                    style={{ ...GLASS.soft, minHeight: 34, paddingHorizontal: 13, borderRadius: 999, borderWidth: 1, justifyContent: 'center' }}>
+                    <Text style={{ fontSize: 13, fontWeight: '500', color: C.primary }}>⇄ חלופה</Text>
                   </Pressable>
                 )}
               </View>
               {openSubs.has(i) && (
-                <View style={{ backgroundColor: C.primarySoft, borderRadius: 10, padding: 10, gap: 4 }}>
-                  {ing.substitutes.map((s) => <Text key={s} style={{ fontSize: 14, color: C.text, textAlign: 'right' }}>• {s}</Text>)}
+                <View style={{ backgroundColor: C.primarySoft, borderRadius: 16, padding: 12, gap: 4, ...webOnly({ backgroundImage: 'linear-gradient(150deg, #F5E6D8, #F8EFE4)' }) }}>
+                  {subs.map((s) => <Text key={s.id} style={{ fontSize: 14, color: C.text, textAlign: 'right' }}>• {[qtyLabel(s.qty, s.unit), s.name].filter(Boolean).join(' ')}</Text>)}
                 </View>
               )}
             </View>
-          ))}
+            );
+          })}
           {(recipe.recipe_ingredients ?? []).length === 0 && <Text style={{ fontSize: 14, color: C.textMuted, textAlign: 'right', paddingVertical: 10 }}>לא הוזנו מצרכים.</Text>}
         </Card>
       )}
       {tab === 'steps' && (
         <Card>
-          <Text style={{ fontSize: 15, color: C.text, textAlign: 'right', lineHeight: 24 }}>{recipe.instructions || 'לא הוזן אופן הכנה.'}</Text>
+          <Text style={{ fontSize: 15, color: C.text, textAlign: 'right', lineHeight: 24, writingDirection: 'rtl' }}>{recipe.instructions || 'לא הוזן אופן הכנה.'}</Text>
         </Card>
       )}
       <RecipeDisclaimer />

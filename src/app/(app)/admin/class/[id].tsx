@@ -4,7 +4,7 @@ import { View } from 'react-native';
 
 import { AdminRoster } from '@/components/admin-roster';
 import { BackLink, Loading, Muted, Screen, Title } from '@/components/ui';
-import { KIND_LABEL, type ClassRow } from '@/lib/classes';
+import { CLASS_SELECT, classColor, classDescription, classLabel, type ClassRow } from '@/lib/classes';
 import { dateTimeLabel } from '@/lib/dates';
 import { supabase } from '@/lib/supabase';
 
@@ -14,16 +14,18 @@ export default function AdminClassScreen() {
   const [cls, setCls] = useState<ClassRow | null>(null);
 
   useEffect(() => {
-    supabase.from('classes').select('*').eq('id', id).single().then(({ data }) => setCls((data as ClassRow | null) ?? null));
+    supabase.from('classes').select(CLASS_SELECT).eq('id', id).single().then(({ data }) => setCls((data as ClassRow | null) ?? null));
   }, [id]);
 
   if (!cls) return <Screen><Loading /></Screen>;
   return (
     <Screen>
-      <BackLink label="חזרה לניהול" onPress={() => (router.canGoBack() ? router.back() : router.replace('/admin' as never))} />
-      <View>
-        <Title>{KIND_LABEL[cls.kind]}</Title>
+      {/* This screen is reached from the class page in the schedule tab, so "back" returns there (it lives in the admin tab, whose own history only has the admin menu). */}
+      <BackLink label="חזרה לאימון" onPress={() => router.navigate(`/schedule/${id}` as never)} />
+      <View style={{ borderRightWidth: classColor(cls) ? 6 : 0, borderRightColor: classColor(cls) ?? undefined, paddingRight: classColor(cls) ? 12 : 0 }}>
+        <Title>{classLabel(cls)}</Title>
         <Muted>{dateTimeLabel(cls.starts_at)}</Muted>
+        {classDescription(cls) ? <Muted>{classDescription(cls)}</Muted> : null}
       </View>
       <AdminRoster cls={cls} />
     </Screen>

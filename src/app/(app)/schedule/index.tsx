@@ -1,15 +1,15 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
 
 import { MyBookings } from '@/components/my-bookings';
-import { Badge, Card, C, ErrorText, Loading, Muted, Screen, Title } from '@/components/ui';
+import { ClassListItem, DayStrip, WeekNav, type BadgeSpec } from '@/components/schedule-parts';
+import { Segmented } from '@/components/segmented';
+import { ErrorText, Loading, Muted, Screen, Title } from '@/components/ui';
 import { useAuth } from '@/lib/auth';
 import {
-  KIND_LABEL, fetchRoster, spotsTaken, waitlistCount, type ClassRow, type MyBooking, type RosterEntry,
+  CLASS_SELECT, fetchRoster, spotsTaken, waitlistCount, type ClassRow, type MyBooking, type RosterEntry,
 } from '@/lib/classes';
-import { addDays, dayLong, dayMonthLabel, dayNumber, dayShort, israelToDate, startOfWeek, timeLabel, todayYmd, weekRangeLabel, ymdOf } from '@/lib/dates';
+import { addDays, dayLong, dayMonthLabel, israelToDate, startOfWeek, todayYmd, ymdOf } from '@/lib/dates';
 import { supabase } from '@/lib/supabase';
 
 type Counts = { taken: number; waiting: number };
@@ -30,7 +30,7 @@ export default function ScheduleScreen() {
     const from = israelToDate(weekStart, '00:00').toISOString();
     const to = israelToDate(addDays(weekStart, 7), '00:00').toISOString();
     const { data, error: err } = await supabase
-      .from('classes').select('*').eq('status', 'scheduled').gte('starts_at', from).lt('starts_at', to).order('starts_at');
+      .from('classes').select(CLASS_SELECT).eq('status', 'scheduled').gte('starts_at', from).lt('starts_at', to).order('starts_at');
     if (err) { setError('לא הצלחנו לטעון את הלו״ז. נסי לרענן.'); return; }
     const rows = (data as ClassRow[]) ?? [];
     setClasses(rows);
@@ -83,43 +83,14 @@ export default function ScheduleScreen() {
     <Screen>
       <Title>{view === 'schedule' ? 'לו״ז אימונים' : 'ההרשמות שלי'}</Title>
 
-      <View accessibilityRole="tablist" style={{ flexDirection: 'row', backgroundColor: '#E9E6E0', borderRadius: 12, padding: 4 }}>
-        {([['schedule', 'לו״ז'], ['mine', 'ההרשמות שלי']] as const).map(([key, label]) => (
-          <Pressable key={key} accessibilityRole="tab" accessibilityState={{ selected: view === key }} onPress={() => setView(key)}
-            style={{ flex: 1, minHeight: 40, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: view === key ? C.card : 'transparent' }}>
-            <Text style={{ fontSize: 15, fontWeight: view === key ? '700' : '400', color: C.text }}>{label}</Text>
-          </Pressable>
-        ))}
-      </View>
+      <Segmented options={[['schedule', 'לו״ז'], ['mine', 'ההרשמות שלי']] as const} value={view} onChange={setView} />
 
       {view === 'mine' && <MyBookings />}
 
       {view === 'schedule' && (<>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Pressable accessibilityRole="button" accessibilityLabel="שבוע קודם" onPress={() => changeWeek(-1)} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
-          <Ionicons name="chevron-forward" size={24} color={C.text} />
-        </Pressable>
-        <Text style={{ fontSize: 16, fontWeight: '700', color: C.text }}>{weekRangeLabel(weekStart)}</Text>
-        <Pressable accessibilityRole="button" accessibilityLabel="שבוע הבא" onPress={() => changeWeek(1)} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
-          <Ionicons name="chevron-back" size={24} color={C.text} />
-        </Pressable>
-      </View>
+      <WeekNav weekStart={weekStart} onChange={changeWeek} />
 
-      <View style={{ flexDirection: 'row', gap: 4, backgroundColor: C.card, borderRadius: 16, borderWidth: 1, borderColor: C.border, padding: 6 }}>
-        {days.map((d) => {
-          const on = d === selected;
-          return (
-            <Pressable
-              key={d} accessibilityRole="button" accessibilityLabel={`${dayLong(d)} ${dayMonthLabel(d)}`} accessibilityState={{ selected: on }}
-              onPress={() => setSelected(d)}
-              style={{ flex: 1, minHeight: 60, borderRadius: 12, alignItems: 'center', justifyContent: 'center', gap: 2, backgroundColor: on ? C.primary : 'transparent' }}>
-              <Text style={{ fontSize: 12, color: on ? '#fff' : C.textMuted }}>{dayShort(d)}</Text>
-              <Text style={{ fontSize: 17, fontWeight: '700', color: on ? '#fff' : C.text }}>{dayNumber(d)}</Text>
-              <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: hasClass(d) ? (on ? '#fff' : C.primary) : 'transparent' }} />
-            </Pressable>
-          );
-        })}
-      </View>
+      <DayStrip days={days} selected={selected} hasClass={hasClass} onSelect={setSelected} />
 
       <Muted>
         {dayLong(selected)} {dayMonthLabel(selected)}{classes ? ` · ${dayClasses.length === 0 ? 'אין אימונים' : dayClasses.length === 1 ? 'אימון אחד' : `${dayClasses.length} אימונים`}` : ''}
@@ -134,7 +105,7 @@ export default function ScheduleScreen() {
         const now = new Date();
         const full = cnt ? cnt.taken >= c.capacity : false;
         const opensLater = new Date(c.registration_opens_at) > now;
-        let badge: { label: string; tone: 'green' | 'orange' | 'brand' | 'gray' };
+        let badge: BadgeSpec;
         if (m?.status === 'booked') badge = { label: '✓ רשומה', tone: 'brand' };
         else if (m?.status === 'offered') badge = { label: 'התפנה לך מקום', tone: 'orange' };
         else if (m?.status === 'waitlist') badge = { label: 'ברשימת המתנה', tone: 'orange' };
@@ -144,19 +115,8 @@ export default function ScheduleScreen() {
         else badge = { label: `${c.capacity - cnt.taken} מקומות`, tone: 'green' };
 
         return (
-          <Pressable key={c.id} accessibilityRole="button" onPress={() => router.push(`/schedule/${c.id}` as never)}>
-            <Card style={{ flexDirection: 'row', alignItems: 'center', gap: 14, borderColor: m?.status === 'booked' ? C.primary : C.border, borderWidth: m?.status === 'booked' ? 2 : 1 }}>
-              <View style={{ width: 60, alignItems: 'center' }}>
-                <Text style={{ fontSize: 18, fontWeight: '700', color: C.text }}>{timeLabel(c.starts_at)}</Text>
-                <Text style={{ fontSize: 12, color: C.textMuted }}>{c.duration_min} דק׳</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 17, fontWeight: '700', color: C.text, textAlign: 'right' }}>{KIND_LABEL[c.kind]}</Text>
-                <Text style={{ fontSize: 13, color: C.textMuted, textAlign: 'right' }}>{cnt ? `${cnt.taken} מתוך ${c.capacity}` : ' '}</Text>
-              </View>
-              <Badge label={badge.label} tone={badge.tone} />
-            </Card>
-          </Pressable>
+          <ClassListItem key={c.id} cls={c} taken={cnt ? cnt.taken : null} badge={badge} registered={m?.status === 'booked'}
+            onPress={() => router.push(`/schedule/${c.id}` as never)} />
         );
       })}
 

@@ -1,12 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
-import { createElement } from 'react';
+import { createElement, useRef } from 'react';
 import { Platform, TextInput } from 'react-native';
 
 import { C } from '@/components/ui';
 
 const box = {
-  minHeight: 44, borderRadius: 12, border: `1px solid ${C.border}`, backgroundColor: '#fff',
-  padding: '0 12px', fontSize: 15.5, color: C.text, fontFamily: 'inherit', boxSizing: 'border-box',
+  minHeight: 46, borderRadius: 16, border: '1px solid rgba(255,255,255,0.95)', backgroundColor: 'rgba(255,255,255,0.72)',
+  boxShadow: 'inset 0 1px 3px rgba(92,74,66,0.12)', padding: '0 14px', fontSize: 15.5, color: C.text, fontFamily: 'inherit', boxSizing: 'border-box',
   width: '100%', maxWidth: '100%', minWidth: 0,
 };
 
@@ -18,6 +18,7 @@ const displayDate = (ymd: string) => (ymd ? `${ymd.slice(8, 10)}/${ymd.slice(5, 
 export function NativePickerInput({
   type, value, onChange, label,
 }: { type: 'date' | 'time'; value: string; onChange: (v: string) => void; label: string }) {
+  const inputRef = useRef<{ showPicker?: () => void; focus: () => void } | null>(null);
   if (Platform.OS === 'web') {
     // Safari/iOS renders a native date input's VALUE using the device's own language & region
     // settings, no matter what `lang`/`dir` we set on the element — on Tamar's phone that showed up
@@ -26,7 +27,11 @@ export function NativePickerInput({
     // in a plain box underneath it, so what's actually on screen never depends on device settings.
     return createElement(
       'div',
-      { style: { position: 'relative', width: '100%' } },
+      {
+        // Tapping anywhere in the frame opens the picker (desktop browsers otherwise only react to the tiny built-in icon).
+        style: { position: 'relative', width: '100%', cursor: 'pointer' },
+        onClick: () => { try { if (inputRef.current?.showPicker) inputRef.current.showPicker(); else inputRef.current?.focus(); } catch { inputRef.current?.focus(); } },
+      },
       createElement(
         'div',
         { style: { ...box, display: 'flex', alignItems: 'center', gap: 8, direction: 'ltr', justifyContent: 'flex-start' } },
@@ -34,7 +39,7 @@ export function NativePickerInput({
         type === 'date' ? displayDate(value) : value,
       ),
       createElement('input', {
-        type, value, 'aria-label': label,
+        ref: inputRef, type, value, 'aria-label': label,
         onChange: (e: { target: { value: string } }) => onChange(e.target.value),
         style: { position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, border: 'none', margin: 0, padding: 0, cursor: 'pointer' },
       }),
@@ -44,7 +49,7 @@ export function NativePickerInput({
     <TextInput
       value={value} onChangeText={onChange} accessibilityLabel={label}
       placeholder={type === 'date' ? 'YYYY-MM-DD' : 'HH:MM'}
-      style={{ minHeight: 44, borderRadius: 12, borderWidth: 1, borderColor: C.border, backgroundColor: '#fff', paddingHorizontal: 12, fontSize: 15.5 }}
+      style={{ minHeight: 46, borderRadius: 16, borderWidth: 1, borderColor: C.border, backgroundColor: '#fff', paddingHorizontal: 14, fontSize: 15.5 }}
     />
   );
 }
